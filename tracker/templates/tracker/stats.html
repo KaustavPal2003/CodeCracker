@@ -1,0 +1,159 @@
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Stats - {{ username }}{% endblock %}
+
+{% block content %}
+    <div class="performance-container">
+        <h2>📊 Stats for {{ username }}</h2>
+
+        <!-- Notification Area -->
+        <div id="notification" class="notification" style="display: none;">
+            <p>Data updated!</p>
+        </div>
+
+        <!-- Hidden elements to pass data to JavaScript -->
+        <div id="username-data" data-username="{{ username }}" style="display: none;"></div>
+        <div id="fetch-url" data-url="{% url 'fetch_user_rating_history' username=username %}" style="display: none;"></div>
+
+        <!-- Error Display -->
+        {% if message %}
+            <div class="error-message">
+                <p>{{ message }}</p>
+            </div>
+        {% endif %}
+
+        <!-- Stats Display -->
+        <div id="stats-container">
+            <p>Codeforces Rating: {{ codeforces_rating }}</p>
+            <p>LeetCode Solved: {{ leetcode_solved }}</p>
+            <p>CodeChef Rating: {{ codechef_rating }}</p>
+        </div>
+
+        <!-- Rating History -->
+        <div id="history-section">
+            {% if rating_history %}
+                <h3>Contest History</h3>
+                <div class="history-container">
+                    <table class="stats-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Platform</th>
+                                <th>Contest</th>
+                                <th>Rank</th>
+                                <th>Old Rating</th>
+                                <th>New Rating</th>
+                                <th>Change</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            {% for entry in rating_history %}
+                                <tr>
+                                    <td>{{ entry.platform }}</td>
+                                    <td>{{ entry.contest }}</td>
+                                    <td>{{ entry.rank }}</td>
+                                    <td>{{ entry.old_rating }}</td>
+                                    <td>{{ entry.new_rating }}</td>
+                                    <td>{{ entry.change }}</td>
+                                    <td>{{ entry.date|slice:":10" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p id="no-history" class="no-data">No contest history available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/stats.css' %}">
+
+    <!-- WebSocket Script -->
+    <script>
+        const username = document.getElementById("username-data").dataset.username;
+        const fetchUrl = document.getElementById("fetch-url").dataset.url;
+        const wsUrl = `ws://${window.location.host}/ws/stats/${username}/`;
+        const ws = new WebSocket(wsUrl);
+
+        let lastData = null;
+
+        ws.onopen = function() {
+            console.log(`WebSocket connected for ${username}`);
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log("Received WebSocket data:", data);
+
+            // Check for changes
+            if (lastData) {
+                if (JSON.stringify(data) !== JSON.stringify(lastData)) {
+                    showNotification("Data updated!");
+                }
+            }
+            lastData = data;
+
+            // Update stats
+            updateStats(data);
+        };
+
+        ws.onclose = function() {
+            console.log(`WebSocket disconnected for ${username}`);
+        };
+
+        ws.onerror = function(error) {
+            console.error("WebSocket error:", error);
+        };
+
+        function showNotification(message) {
+            const notification = document.getElementById("notification");
+            notification.textContent = message;
+            notification.style.display = "block";
+            setTimeout(() => {
+                notification.style.display = "none";
+            }, 3000);
+        }
+
+        function updateStats(data) {
+            // Update main user's stats
+            document.querySelector("#stats-container p:nth-child(1)").textContent = `Codeforces Rating: ${data.codeforces_rating !== "N/A" ? data.codeforces_rating : "N/A"}`;
+            document.querySelector("#stats-container p:nth-child(2)").textContent = `LeetCode Solved: ${data.leetcode_solved}`;
+            document.querySelector("#stats-container p:nth-child(3)").textContent = `CodeChef Rating: ${data.codechef_rating !== "N/A" ? data.codechef_rating : "N/A"}`;
+
+            // Update history
+            const historyBody = document.getElementById("history-body");
+            const noHistory = document.getElementById("no-history");
+            const historySection = document.getElementById("history-section");
+            historyBody.innerHTML = "";
+            if (noHistory) noHistory.remove();
+
+            // Add main user's history
+            if (data.rating_history && data.rating_history.length > 0) {
+                data.rating_history.forEach(entry => {
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${entry.platform}</td>
+                        <td>${entry.contest}</td>
+                        <td>${entry.rank || "N/A"}</td>
+                        <td>${entry.old_rating || "N/A"}</td>
+                        <td>${entry.new_rating || "N/A"}</td>
+                        <td>${entry.change || "N/A"}</td>
+                        <td>${entry.date.slice(0, 10)}</td>
+                    `;
+                    historyBody.appendChild(row);
+                });
+            }
+
+            if (!data.rating_history) {
+                const noHistoryMsg = document.createElement("p");
+                noHistoryMsg.id = "no-history";
+                noHistoryMsg.className = "no-data";
+                noHistoryMsg.textContent = "No contest history available.";
+                historySection.appendChild(noHistoryMsg);
+            }
+        }
+    </script>
+{% endblock %}

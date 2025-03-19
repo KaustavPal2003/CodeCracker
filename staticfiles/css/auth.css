@@ -1,0 +1,135 @@
+/* static/css/auth.css */
+
+.auth-container {
+    /* Inherits .container styles from base.css */
+    max-width: 500px;
+    padding: 2rem;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+}
+
+.auth-container h2 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.auth-form label {
+    color: var(--text-color);
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.auth-form input[type="text"],
+.auth-form input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--shadow-color);
+    border-radius: 4px;
+    background-color: var(--container-bg);
+    color: var(--text-color);
+    font-size: 16px;
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.auth-form input[type="text"]:focus,
+.auth-form input[type="password"]:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+}
+
+.auth-button {
+    background-color: var(--secondary-color);
+    color: var(--nav-text);
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.auth-button:hover {
+    background-color: var(--accent-color);
+    transform: translateY(-2px);
+}
+
+.auth-link {
+    text-align: center;
+    margin-top: 15px;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+/* Enhanced link visibility */
+.auth-link a {
+    color:  #FFFFFF /* Darker, vibrant blue for light mode visibility */
+    text-decoration: underline;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.3s, background-color 0.3s;
+}
+
+.auth-link a:hover {
+    color: #ff4500; /* Orange-red for hover in light mode */
+    background-color: rgba(255, 69, 0, 0.1);
+}
+
+/* Validation Errors */
+.auth-form .errorlist {
+    list-style: none;
+    margin: 5px 0 0 0;
+    padding: 0;
+    color: var(--accent-color);
+    font-size: 14px;
+}
+
+.auth-form .errorlist li {
+    margin: 0;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .auth-container {
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .auth-form input[type="text"],
+[data-theme="dark"] .auth-form input[type="password"] {
+    background-color: var(--container-bg);
+    border-color: var(--shadow-color);
+}
+
+[data-theme="dark"] .auth-form input[type="text"]:focus,
+[data-theme="dark"] .auth-form input[type="password"]:focus {
+    border-color: var(--secondary-color);
+}
+
+[data-theme="dark"] .auth-link {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .auth-link a {
+    color: #87cefa; /* Light sky blue, unchanged for dark mode */
+}
+
+[data-theme="dark"] .auth-link a:hover {
+    color: #ffa07a; /* Light salmon for hover in dark mode */
+    background-color: rgba(255, 160, 122, 0.2);
+}
+
+[data-theme="dark"] .auth-form .errorlist {
+    color: var(--accent-color);
+}

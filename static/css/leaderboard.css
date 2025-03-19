@@ -1,0 +1,72 @@
+/* static/css/leaderboard.css */
+.leaderboard-controls {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.search-input {
+    padding: 8px;
+    font-size: 1rem;
+    border: 1px solid var(--primary-color);
+    border-radius: 4px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    width: 250px;
+    transition: border-color 0.3s;
+}
+
+.search-input:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+}
+
+.leaderboard-table th {
+    cursor: pointer;
+    position: relative;
+}
+
+.leaderboard-table th.asc::after {
+    content: ' ↑';
+    color: var(--nav-text);
+}
+
+.leaderboard-table th:not(.asc)::after {
+    content: ' ↓';
+    color: var(--nav-text);
+}
+
+.current-user {
+    background-color: rgba(var(--accent-color), 0.2);
+    font-weight: bold;
+}
+
+.pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.pagination button {
+    padding: 8px 16px;
+    margin: 0 5px;
+    background-color: var(--secondary-color);
+    color: var(--nav-text);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.pagination button:disabled {
+    background-color: var(--primary-color);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination button:hover:not(:disabled) {
+    background-color: var(--accent-color);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

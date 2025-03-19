@@ -1,0 +1,196 @@
+/* static/css/base.css */
+:root {
+    /* Light mode variables (default) */
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --background-color: #ecf0f1;
+    --text-color: #2c3e50;
+    --nav-bg: #2c3e50;
+    --nav-text: white;
+    --container-bg: white;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --hover-bg: rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode variables */
+[data-theme="dark"] {
+    --primary-color: #34495e;
+    --secondary-color: #2980b9;
+    --accent-color: #c0392b;
+    --background-color: #1e1e1e;
+    --text-color: #ecf0f1;
+    --nav-bg: #2c3e50;
+    --nav-text: #ecf0f1;
+    --container-bg: #2d2d2d;
+    --shadow-color: rgba(255, 255, 255, 0.1);
+    --hover-bg: rgba(255, 255, 255, 0.2);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+nav {
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 5px var(--shadow-color);
+}
+
+nav a {
+    color: var(--nav-text);
+    text-decoration: none;
+    margin: 0 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+nav a:hover {
+    background: var(--hover-bg);
+    transform: translateY(-2px);
+}
+
+.container {
+    max-width: 1200px;
+    width: 90%;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--container-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    transition: transform 0.2s ease, background-color 0.3s;
+}
+
+.container:hover {
+    transform: translateY(-5px);
+}
+
+.nav-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-info {
+    background: var(--hover-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    margin-right: 1rem;
+}
+
+a[href*='signup'], a[href*='login'], a[href*='logout'] {
+    background: var(--secondary-color);
+}
+
+a[href*='signup']:hover, a[href*='login']:hover, a[href*='logout']:hover {
+    background: var(--accent-color);
+}
+
+/* Custom Switch Styles */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.switch {
+    background-image: url('../images/off_bg.svg');
+    background-color: #252525;
+    background-size: cover;
+    width: 80px;    /* Reduced from 400px */
+    height: 30px;   /* Reduced from 150px */
+    border-radius: 30px; /* Adjusted to match height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.5s;
+    box-shadow: 0 -3px 4px 0 rgba(0,0,0,0.25), 0 4px 4px rgba(255,255,255,0.4), inset 0 1px 13px rgba(0,0,0,0.25), inset 0 7px 9px 0 rgba(0,0,0,0.25);
+}
+
+.switch.on {
+    background-image: url('../images/on_bg.svg');
+    background-color: #3F83ED;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.switch .slider {
+    background-color: #9C9C9C;
+    background-image: url('../images/spots.svg');
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 100%;
+    width: 25px;    /* Reduced from 125px, proportional to switch */
+    height: 25px;   /* Reduced from 125px */
+    position: absolute;
+    left: 50px;     /* Adjusted from 255px, positions it near the right end */
+    pointer-events: none;
+    transition: all 0.5s;
+    box-shadow: inset 0 -5px 4px 0 #6A6A6A, inset 3px 4px 0 #CACACA3D;
+}
+
+.switch.on .slider {
+    left: 5px;      /* Adjusted from 20px, moves to left end */
+    background-image: none;
+    background-color: #EDCB52;
+    box-shadow: inset 0 -5px 4px 0 #C1BC27, inset 3px 4px 4px 0 #FEFFEF;
+}
+
+@media (max-width: 768px) {
+    nav {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    .nav-group {
+        margin: 0.5rem 0;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .container {
+        width: 95%;
+        margin: 1rem auto;
+    }
+
+    .switch {
+        width: 60px;  /* Even smaller for mobile */
+        height: 22.5px;
+        border-radius: 22.5px;
+    }
+
+    .switch .slider {
+        width: 18.75px;
+        height: 18.75px;
+        left: 37.5px; /* Adjusted for smaller switch */
+    }
+
+    .switch.on .slider {
+        left: 3.75px;
+    }
+}

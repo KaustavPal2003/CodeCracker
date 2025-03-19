@@ -1,0 +1,798 @@
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Compare Stats{% endblock %}
+
+{% block content %}
+<div class="performance-container">
+    <h2>🆚 Compare Stats</h2>
+
+    <!-- Notification Area -->
+    <div id="notification" class="notification" style="display: none;"></div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="spinner" style="display: none;">
+        <div class="spinner-circle"></div>
+    </div>
+
+    <!-- Hidden Data Elements -->
+    <div id="username-data" data-username="{{ request.user.username }}" style="display: none;"></div>
+    <div id="fetch-url" data-url="{% url 'fetch_user_rating_history' username=request.user.username %}" style="display: none;"></div>
+
+    <!-- Error Display -->
+    <div id="error-message" class="error-message" style="display: none;"></div>
+    {% if message %}
+        <div class="error-message">
+            <p>{{ message }}</p>
+        </div>
+    {% endif %}
+
+
+
+    
+
+<form id="compare-form" method="POST">
+        {% csrf_token %}
+        <label for="compare_username">Compare with another user:</label>
+        <input type="text" id="compare_username" name="compare_username" placeholder="Enter username" required list="username-suggestions">
+        <datalist id="username-suggestions"></datalist>
+        <button type="submit">Compare</button>
+        <button type="button" id="save-comparison">Save Comparison</button>
+        <button type="button" id="clear-comparison">Clear</button>
+    </form>
+
+    <!-- Stats Container -->
+    <div id="stats-container">
+        <h3>{{ request.user.username }}</h3>
+        <p>Codeforces Rating: <span id="codeforces-rating" class="stat-value">{{ codeforces_rating }}</span></p>
+        <p>LeetCode Solved: <span id="leetcode-solved" class="stat-value">{{ leetcode_solved }}</span></p>
+        <p>CodeChef Rating: <span id="codechef-rating" class="stat-value">{{ codechef_rating }}</span></p>
+        <div class="compare-stat" id="compare-section" style="display: none;">
+            <h3 id="compare-username">...</h3>
+            <p>Codeforces Rating: <span id="compare-codeforces-rating" class="stat-value">N/A</span></p>
+            <p>LeetCode Solved: <span id="compare-leetcode-solved" class="stat-value">0</span></p>
+            <p>CodeChef Rating: <span id="compare-codechef-rating" class="stat-value">N/A</span></p>
+        </div>
+    </div>
+
+    <!-- Chart Container -->
+    <div id="chart-container">
+        <canvas id="ratingChart"></canvas>
+        <p id="no-data-message" class="no-data" style="display: none;">No performance data available to display.</p>
+        <button id="zoom-to-fit" class="chart-button" style="display: none;">Zoom to Fit</button>
+    </div>
+
+    <!-- History Section -->
+    <div id="history-section">
+        {% if rating_history %}
+            <h3>Contest History</h3>
+            <div class="history-container">
+                <table class="stats-table" id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Platform</th>
+                            <th>Contest</th>
+                            <th>Rank</th>
+                            <th>Old Rating</th>
+                            <th>New Rating</th>
+                            <th>Change</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body">
+                        {% for entry in rating_history %}
+                            <tr>
+                                <td>{{ request.user.username }}</td>
+                                <td>{{ entry.platform }}</td>
+                                <td>{{ entry.contest }}</td>
+                                <td>{{ entry.rank }}</td>
+                                <td>{{ entry.old_rating }}</td>
+                                <td>{{ entry.new_rating }}</td>
+                                <td>{{ entry.change }}</td>
+                                <td>{{ entry.date|slice:":10" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p id="no-history" class="no-data">No contest history available.</p>
+        {% endif %}
+    </div>
+
+    <!-- Inline CSS -->
+    <style>
+        #ratingChart {
+            transition: cursor 0.2s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            cursor: grab;
+            touch-action: none;
+        }
+        #chart-container {
+            width: 100%;
+            height: 600px; /* Increased from 400px for better visibility */
+            position: relative;
+        }
+        #reset-zoom, #zoom-to-fit {
+            position: absolute;
+            top: 10px;
+            padding: 5px 10px;
+            background-color: var(--secondary-color);
+            color: var(--nav-text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #reset-zoom { right: 10px; }
+        #zoom-to-fit { right: 100px; }
+        #reset-zoom:hover, #zoom-to-fit:hover {
+            background-color: var(--accent-color);
+        }
+        #clear-comparison {
+            margin-left: 10px;
+            background-color: var(--accent-color);
+            color: var(--nav-text);
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #clear-comparison:hover {
+            background-color: #c0392b;
+        }
+        .spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        }
+        .spinner-circle {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--secondary-color);
+            border-top: 4px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .stat-value {
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+        .stat-value.updated {
+            color: var(--accent-color);
+            transform: scale(1.1);
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/chart.umd.min.js' %}"></script>
+    <script src="{% static 'js/moment.min.js' %}"></script>
+    <script src="{% static 'js/chartjs-adapter-moment.min.js' %}"></script>
+    <script src="{% static 'js/chartjs-plugin-zoom.min.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('Script loaded successfully');
+            console.log('Moment available:', typeof moment !== 'undefined' ? 'Yes' : 'No');
+            console.log('Chart.js version:', Chart.version);
+            console.log('Adapter registered:', typeof Chart._adapters !== 'undefined' && typeof Chart._adapters._date !== 'undefined' ? 'Yes' : 'No');
+
+            const username = document.getElementById('username-data').dataset.username;
+            const fetchUrl = document.getElementById('fetch-url').dataset.url;
+            const wsUrl = `ws://${window.location.host}/ws/stats/${username}/`;
+            const ws = new WebSocket(wsUrl);
+
+            let lastData = null;
+            let compareUsername = null;
+            let chart = null;
+            let initialMinDate, initialMaxDate, initialMinRating, initialMaxRating;
+
+            ws.onopen = function () {
+                console.log(`WebSocket connected for ${username}`);
+            };
+
+            ws.onmessage = debounce(function (event) {
+                const data = JSON.parse(event.data);
+                console.log('Received WebSocket data:', data);
+                document.getElementById('loading-spinner').style.display = 'none';
+
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                if (lastData && JSON.stringify(data) !== JSON.stringify(lastData)) {
+                    showNotification('Data updated!');
+                    animateStats();
+                }
+                lastData = data;
+
+                updateStats(data, username, compareUsername);
+                updateChart(data);
+            }, 300);
+
+            ws.onclose = function () {
+                console.log(`WebSocket disconnected for ${username}`);
+                showError('WebSocket connection lost. Please refresh the page.');
+            };
+
+            ws.onerror = function (error) {
+                console.error('WebSocket error:', error);
+                showError('An error occurred. Please try again later.');
+            };
+
+            function showNotification(message) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.style.display = 'block';
+                setTimeout(() => notification.style.display = 'none', 3000);
+            }
+
+            function showError(message) {
+                const errorDiv = document.getElementById('error-message');
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                setTimeout(() => errorDiv.style.display = 'none', 5000);
+            }
+
+            function animateStats() {
+                const stats = ['codeforces-rating', 'leetcode-solved', 'codechef-rating', 'compare-codeforces-rating', 'compare-leetcode-solved', 'compare-codechef-rating'];
+                stats.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.classList.add('updated');
+                        setTimeout(() => el.classList.remove('updated'), 1000);
+                    }
+                });
+            }
+
+            function updateStats(data, username, compareUsername) {
+                document.getElementById('codeforces-rating').textContent = data.codeforces_rating !== 'N/A' ? data.codeforces_rating : 'N/A';
+                document.getElementById('leetcode-solved').textContent = data.leetcode_solved;
+                document.getElementById('codechef-rating').textContent = data.codechef_rating !== 'N/A' ? data.codechef_rating : 'N/A';
+
+                const historyBody = document.getElementById('history-body');
+                const noHistory = document.getElementById('no-history');
+                const historySection = document.getElementById('history-section');
+                historyBody.innerHTML = '';
+                if (noHistory) noHistory.remove();
+
+                if (data.rating_history && data.rating_history.length > 0) {
+                    data.rating_history.forEach(entry => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${username}</td>
+                            <td>${entry.platform}</td>
+                            <td>${entry.contest}</td>
+                            <td>${entry.rank || 'N/A'}</td>
+                            <td>${entry.old_rating || 'N/A'}</td>
+                            <td>${entry.new_rating || 'N/A'}</td>
+                            <td>${entry.change || 'N/A'}</td>
+                            <td>${entry.date.slice(0, 10)}</td>
+                        `;
+                        historyBody.appendChild(row);
+                    });
+                }
+
+                if (data.compare_rating_history && data.compare_rating_history.length > 0) {
+                    data.compare_rating_history.forEach(entry => {
+                        const row = document.createElement('tr');
+                        row.classList.add('compare-row');
+                        row.innerHTML = `
+                            <td>${compareUsername}</td>
+                            <td>${entry.platform}</td>
+                            <td>${entry.contest}</td>
+                            <td>${entry.rank || 'N/A'}</td>
+                            <td>${entry.old_rating || 'N/A'}</td>
+                            <td>${entry.new_rating || 'N/A'}</td>
+                            <td>${entry.change || 'N/A'}</td>
+                            <td>${entry.date.slice(0, 10)}</td>
+                        `;
+                        historyBody.appendChild(row);
+                    });
+                }
+
+                if (!data.rating_history && !data.compare_rating_history) {
+                    const noHistoryMsg = document.createElement('p');
+                    noHistoryMsg.id = 'no-history';
+                    noHistoryMsg.className = 'no-data';
+                    noHistoryMsg.textContent = 'No contest history available.';
+                    historySection.appendChild(noHistoryMsg);
+                }
+
+                if (compareUsername && data.compare_rating_history) {
+                    const compareCodeforces = data.compare_rating_history
+                        .filter(h => h.platform === 'Codeforces')
+                        .slice(-1)[0]?.new_rating || 'N/A';
+                    const compareCodechef = data.compare_rating_history
+                        .filter(h => h.platform === 'Codechef')
+                        .slice(-1)[0]?.new_rating || 'N/A';
+                    const compareLeetcode = data.leetcode_solved_compare || 0;
+
+                    document.getElementById('compare-username').textContent = compareUsername;
+                    document.getElementById('compare-codeforces-rating').textContent = compareCodeforces;
+                    document.getElementById('compare-leetcode-solved').textContent = compareLeetcode;
+                    document.getElementById('compare-codechef-rating').textContent = compareCodechef;
+                    document.getElementById('compare-section').style.display = 'block';
+                } else {
+                    document.getElementById('compare-section').style.display = 'none';
+                }
+            }
+
+            function updateChart(data) {
+                const ctx = document.getElementById('ratingChart').getContext('2d');
+                const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+                const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() || (isDarkMode ? '#ffffff' : '#000000');
+                const backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--container-bg').trim() || (isDarkMode ? '#2f2f2f' : '#ffffff');
+
+                if (chart) {
+                    chart.destroy();
+                }
+
+                const codeforcesData = (data.rating_history || [])
+                    .filter(h => h.platform === 'Codeforces')
+                    .map(h => ({ x: new Date(h.date).getTime(), y: h.new_rating || 0, contest: h.contest, rank: h.rank }));
+                const codechefData = (data.rating_history || [])
+                    .filter(h => h.platform === 'Codechef')
+                    .map(h => ({ x: new Date(h.date).getTime(), y: h.new_rating || 0, contest: h.contest, rank: h.rank }));
+                const leetcodeData = (data.rating_history || [])
+                    .filter(h => h.platform === 'Leetcode')
+                    .map(h => ({ x: new Date(h.date).getTime(), y: h.new_rating || 0, contest: h.contest, rank: h.rank }));
+                const compareCodeforcesData = (data.compare_rating_history || [])
+                    .filter(h => h.platform === 'Codeforces')
+                    .map(h => ({ x: new Date(h.date).getTime(), y: h.new_rating || 0, contest: h.contest, rank: h.rank }));
+                const compareCodechefData = (data.compare_rating_history || [])
+                    .filter(h => h.platform === 'Codechef')
+                    .map(h => ({ x: new Date(h.date).getTime(), y: h.new_rating || 0, contest: h.contest, rank: h.rank }));
+                const compareLeetcodeData = (data.compare_rating_history || [])
+                    .filter(h => h.platform === 'Leetcode')
+                    .map(h => ({ x: new Date(h.date).getTime(), y: h.new_rating || 0, contest: h.contest, rank: h.rank }));
+
+                const allDates = [
+                    ...codeforcesData.map(d => d.x),
+                    ...codechefData.map(d => d.x),
+                    ...leetcodeData.map(d => d.x),
+                    ...compareCodeforcesData.map(d => d.x),
+                    ...compareCodechefData.map(d => d.x),
+                    ...compareLeetcodeData.map(d => d.x)
+                ].filter(date => date !== undefined && !isNaN(date));
+
+                const allRatings = [
+                    ...codeforcesData.map(d => d.y),
+                    ...codechefData.map(d => d.y),
+                    ...leetcodeData.map(d => d.y),
+                    ...compareCodeforcesData.map(d => d.y),
+                    ...compareCodechefData.map(d => d.y),
+                    ...compareLeetcodeData.map(d => d.y)
+                ].filter(rating => rating !== undefined && !isNaN(rating));
+
+                if (allDates.length === 0 || allRatings.length === 0) {
+                    console.error('No valid data points found');
+                    document.getElementById("no-data-message").style.display = 'block';
+                    document.getElementById("zoom-to-fit").style.display = 'none';
+                    return;
+                }
+
+                document.getElementById("no-data-message").style.display = 'none';
+                document.getElementById("zoom-to-fit").style.display = 'block';
+
+                const minDate = Math.min(...allDates);
+                const maxDate = Math.max(...allDates);
+                const minRating = Math.min(...allRatings);
+                const maxRating = Math.max(...allRatings);
+                const dateRange = maxDate - minDate;
+                const ratingRange = maxRating - minRating;
+                const datePadding = dateRange * 0.2;
+                const ratingPadding = ratingRange * 0.2;
+
+                initialMinDate = minDate - datePadding;
+                initialMaxDate = maxDate + datePadding;
+                initialMinRating = minRating - ratingPadding;
+                initialMaxRating = maxRating + ratingPadding;
+
+                let isPanning = false;
+                let panStartX = 0;
+                let panStartY = 0;
+
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            {
+                                label: `${username} - Codeforces`,
+                                data: codeforcesData,
+                                borderColor: ctx => {
+                                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                                    gradient.addColorStop(0, '#3498db');
+                                    gradient.addColorStop(1, '#1abc9c');
+                                    return gradient;
+                                },
+                                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                                fill: false,
+                                tension: 0.1,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: `${username} - CodeChef`,
+                                data: codechefData,
+                                borderColor: ctx => {
+                                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                                    gradient.addColorStop(0, '#e74c3c');
+                                    gradient.addColorStop(1, '#e67e22');
+                                    return gradient;
+                                },
+                                backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                                fill: false,
+                                tension: 0.1,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: `${username} - LeetCode`,
+                                data: leetcodeData,
+                                borderColor: ctx => {
+                                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                                    gradient.addColorStop(0, '#2ecc71');
+                                    gradient.addColorStop(1, '#27ae60');
+                                    return gradient;
+                                },
+                                backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                                fill: false,
+                                tension: 0.1,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: `${compareUsername || 'Compare'} - Codeforces`,
+                                data: compareCodeforcesData,
+                                borderColor: ctx => {
+                                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                                    gradient.addColorStop(0, '#f1c40f');
+                                    gradient.addColorStop(1, '#f39c12');
+                                    return gradient;
+                                },
+                                backgroundColor: 'rgba(241, 196, 15, 0.2)',
+                                fill: false,
+                                tension: 0.1,
+                                hidden: !compareUsername,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: `${compareUsername || 'Compare'} - CodeChef`,
+                                data: compareCodechefData,
+                                borderColor: ctx => {
+                                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                                    gradient.addColorStop(0, '#9b59b6');
+                                    gradient.addColorStop(1, '#8e44ad');
+                                    return gradient;
+                                },
+                                backgroundColor: 'rgba(155, 89, 182, 0.2)',
+                                fill: false,
+                                tension: 0.1,
+                                hidden: !compareUsername,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            },
+                            {
+                                label: `${compareUsername || 'Compare'} - LeetCode`,
+                                data: compareLeetcodeData,
+                                borderColor: ctx => {
+                                    const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                                    gradient.addColorStop(0, '#e67e22');
+                                    gradient.addColorStop(1, '#d35400');
+                                    return gradient;
+                                },
+                                backgroundColor: 'rgba(230, 126, 34, 0.2)',
+                                fill: false,
+                                tension: 0.1,
+                                hidden: !compareUsername,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'month',
+                                    displayFormats: {
+                                        month: 'MMM YYYY'
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Date',
+                                    color: textColor,
+                                    font: { size: 16, weight: 'bold' }
+                                },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 14 }
+                                },
+                                grid: {
+                                    color: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'
+                                },
+                                min: minDate - datePadding,
+                                max: maxDate + datePadding
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Rating',
+                                    color: textColor,
+                                    font: { size: 16, weight: 'bold' }
+                                },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 14 }
+                                },
+                                grid: {
+                                    color: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'
+                                },
+                                beginAtZero: false,
+                                min: minRating - ratingPadding,
+                                max: maxRating + ratingPadding
+                            }
+                        },
+                        plugins: {
+                            zoom: {
+                                pan: {
+                                    enabled: true,
+                                    mode: 'xy',
+                                    speed: 20,
+                                    threshold: 0,
+                                    onPanStart: ({chart}) => {
+                                        console.log('Pan started');
+                                        isPanning = true;
+                                        chart.canvas.style.cursor = 'grabbing';
+                                    },
+                                    onPan: ({chart, delta}) => {
+                                        console.log('Panning with delta:', delta);
+                                        chart.canvas.style.cursor = 'grabbing';
+                                        chart.update('none');
+                                    },
+                                    onPanComplete: ({chart}) => {
+                                        console.log('Pan completed');
+                                        isPanning = false;
+                                        chart.canvas.style.cursor = 'grab';
+                                        chart.update('none');
+                                    }
+                                },
+                                zoom: {
+                                    wheel: {
+                                        enabled: true,
+                                        speed: 0.1
+                                    },
+                                    mode: 'xy'
+                                },
+                                limits: {
+                                    x: {
+                                        min: minDate - datePadding * 2,
+                                        max: maxDate + datePadding * 2,
+                                        minRange: dateRange / 10
+                                    },
+                                    y: {
+                                        min: minRating - ratingPadding * 2,
+                                        max: maxRating + ratingPadding * 2,
+                                        minRange: ratingRange / 10
+                                    }
+                                }
+                            },
+                            legend: {
+                                labels: {
+                                    color: textColor,
+                                    font: { size: 14 },
+                                    usePointStyle: true
+                                },
+                                onClick: (e, legendItem, legend) => {
+                                    const index = legendItem.datasetIndex;
+                                    const ci = legend.chart;
+                                    ci.getDatasetMeta(index).hidden = !ci.getDatasetMeta(index).hidden;
+                                    ci.update();
+                                }
+                            },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                                titleColor: textColor,
+                                bodyColor: textColor,
+                                borderColor: isDarkMode ? '#ffffff' : '#000000',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        const point = context.raw;
+                                        return `${context.dataset.label}: ${point.y} (Contest: ${point.contest || 'N/A'}, Rank: ${point.rank || 'N/A'})`;
+                                    }
+                                }
+                            }
+                        },
+                        backgroundColor: backgroundColor,
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+
+                chart.canvas.style.cursor = 'grab';
+
+                chart.canvas.addEventListener('mousedown', (event) => {
+                    if (event.button === 0) {
+                        isPanning = true;
+                        panStartX = event.clientX;
+                        panStartY = event.clientY;
+                        chart.canvas.style.cursor = 'grabbing';
+                    }
+                });
+
+                chart.canvas.addEventListener('mousemove', (event) => {
+                    if (isPanning) {
+                        const deltaX = event.clientX - panStartX;
+                        const deltaY = event.clientY - panStartY;
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        const xRange = xScale.max - xScale.min;
+                        const yRange = yScale.max - yScale.min;
+                        const xPixelRatio = xRange / chart.width;
+                        const yPixelRatio = yRange / chart.height;
+
+                        const panX = deltaX * xPixelRatio;
+                        const panY = deltaY * yPixelRatio;
+
+                        xScale.options.min -= panX;
+                        xScale.options.max -= panX;
+                        yScale.options.min += panY;
+                        yScale.options.max += panY;
+
+                        chart.update('none');
+                        panStartX = event.clientX;
+                        panStartY = event.clientY;
+                    }
+                });
+
+                chart.canvas.addEventListener('mouseup', () => {
+                    isPanning = false;
+                    chart.canvas.style.cursor = 'grab';
+                    chart.update('none');
+                });
+
+                chart.canvas.addEventListener('mouseleave', () => {
+                    isPanning = false;
+                    chart.canvas.style.cursor = 'grab';
+                    chart.update('none');
+                });
+
+                const existingResetButton = document.getElementById('reset-zoom');
+                if (!existingResetButton) {
+                    document.getElementById('chart-container').insertAdjacentHTML('beforeend',
+                        '<button id="reset-zoom">Reset Zoom</button>'
+                    );
+                    document.getElementById('reset-zoom').addEventListener('click', () => {
+                        chart.scales.x.options.min = initialMinDate;
+                        chart.scales.x.options.max = initialMaxDate;
+                        chart.scales.y.options.min = initialMinRating;
+                        chart.scales.y.options.max = initialMaxRating;
+                        chart.resetZoom();
+                        chart.canvas.style.cursor = 'grab';
+                        chart.update('none');
+                    });
+                }
+
+                const zoomToFitButton = document.getElementById('zoom-to-fit');
+                zoomToFitButton.addEventListener('click', () => {
+                    chart.scales.x.options.min = initialMinDate;
+                    chart.scales.x.options.max = initialMaxDate;
+                    chart.scales.y.options.min = initialMinRating;
+                    chart.scales.y.options.max = initialMaxRating;
+                    chart.update('active');
+                });
+
+                console.log('Chart initialized');
+            }
+
+            document.getElementById('compare-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
+                compareUsername = document.getElementById('compare_username').value.trim();
+                if (compareUsername) {
+                    document.getElementById('loading-spinner').style.display = 'block';
+                    ws.send(JSON.stringify({ compare_to: compareUsername }));
+                }
+            });
+
+            document.getElementById('clear-comparison').addEventListener('click', () => {
+                compareUsername = null;
+                document.getElementById('compare_username').value = '';
+                ws.send(JSON.stringify({ compare_to: null }));
+                document.getElementById('compare-section').style.display = 'none';
+                const historyBody = document.getElementById('history-body');
+                const compareRows = historyBody.querySelectorAll('.compare-row');
+                compareRows.forEach(row => row.remove());
+                updateChart(lastData);
+            });
+
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.attributeName === 'data-theme' && lastData) {
+                        console.log("Theme changed detected");
+                        if (chart) chart.destroy();
+                        updateChart(lastData);
+                    }
+                });
+            });
+            observer.observe(document.documentElement, { attributes: true });
+
+            function debounce(func, wait) {
+                let timeout;
+                return function (...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+        });
+
+chart.options.onClick = (event, elements) => {
+            if (elements.length > 0) {
+                const element = elements[0];
+                const dataset = chart.data.datasets[element.datasetIndex];
+                const point = dataset.data[element.index];
+                alert(`Contest: ${point.contest || 'N/A'}\nRank: ${point.rank || 'N/A'}\nRating: ${point.y}`);
+            }
+        };
+
+        // Save Comparison
+        document.getElementById('save-comparison').addEventListener('click', () => {
+            if (compareUsername) {
+                fetch('/save_comparison/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        compare_to: compareUsername
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Comparison saved!');
+                    } else {
+                        showError(data.error || 'Failed to save comparison');
+                    }
+                })
+                .catch(error => showError('Error saving comparison'));
+            } else {
+                showError('No comparison to save');
+            }
+        });
+
+        // Add to updateStats for summary
+        function updateStats(data, username, compareUsername) {
+            // ... existing code ...
+            if (data.rating_history) {
+                const avgChange = data.rating_history.reduce((sum, h) => sum + (h.change || 0), 0) / data.rating_history.length;
+                document.getElementById('stats-container').insertAdjacentHTML('beforeend', 
+                    `<p>Average Rating Change: <span class="stat-value">${avgChange.toFixed(2)}</span></p>`
+                );
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="{% static 'css/compare.css' %}">
+</div>
+{% endblock %}

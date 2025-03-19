@@ -1,0 +1,33 @@
+{% extends 'tracker/base.html' %}
+{% load static %}
+
+{% block title %}Signup{% endblock %}
+
+{% block content %}
+    <div class="container auth-container">
+        <h2>Signup</h2>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <ul class="errorlist">
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="auth-button">Signup</button>
+        </form>
+        <p class="auth-link">
+            Already have an account? <a href="{% url 'login' %}">Login here</a>
+        </p>
+    </div>
+
+    <!-- Load Shared Auth CSS -->
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
