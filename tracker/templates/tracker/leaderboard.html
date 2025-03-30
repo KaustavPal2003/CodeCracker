@@ -5,11 +5,16 @@
 {% block title %}Leaderboard{% endblock %}
 
 {% block content %}
-<div class="leaderboard-container">
+<div class="performance-container">
     <h2>🏆 Leaderboard</h2>
 
     <!-- Notification Area -->
     <div id="notification" class="notification" role="alert" style="display: none;"></div>
+
+    <!-- Add this after the notification area -->
+    <div id="loading-spinner" class="spinner" style="display: none;">
+    <div class="spinner-circle"></div>
+    </div>
 
     <!-- Error Display -->
     {% if message %}
@@ -21,14 +26,14 @@
     <!-- Search/Filter Bar -->
     <div class="leaderboard-controls">
         <label for="leaderboard-search" class="sr-only">Search by username</label>
-        <input type="text" id="leaderboard-search" placeholder="Search by username..." class="search-input" aria-label="Search leaderboard">
+        <input type="text" id="leaderboard-search" placeholder="Search by username..." aria-label="Search leaderboard">
     </div>
 
     <!-- Leaderboard Table -->
-    <div class="leaderboard-section">
+    <div id="history-section">
         {% if leaderboard_data %}
-        <div class="leaderboard-container">
-            <table class="leaderboard-table" id="leaderboard-table" role="grid">
+        <div class="history-container">
+            <table class="stats-table" id="leaderboard-table" role="grid">
                 <thead>
                     <tr>
                         <th data-sort="rank" scope="col" tabindex="0">Rank</th>
@@ -56,195 +61,19 @@
         </div>
         <!-- Pagination -->
         <div class="pagination">
-            <button id="prev-page" disabled aria-label="Previous page">Previous</button>
+            <button id="prev-page" class="auth-button" disabled aria-label="Previous page">Previous</button>
             <span id="page-info" aria-live="polite">Page 1</span>
-            <button id="next-page" aria-label="Next page">Next</button>
+            <button id="next-page" class="auth-button" aria-label="Next page">Next</button>
         </div>
         {% else %}
-        <p class="no-data">No leaderboard_data available.</p>
+        <p class="no-data">No leaderboard data available.</p>
         {% endif %}
     </div>
 </div>
 
 <!-- CSS and JS -->
-<link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
-<script id="leaderboard-data" type="application/json">
-    {{ leaderboard_data|safe|escapejs }}
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        let leaderboardData = JSON.parse(document.getElementById('leaderboard-data').textContent.trim());
-        let currentPage = 1;
-        const itemsPerPage = 10;
-        let ws;
-        let filteredData = [...leaderboardData]; // Track filtered/sorted data
-        let sortKey = 'total_score';
-        let isAscending = false;
-
-        // WebSocket Setup
-        try {
-            const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/leaderboard/`;
-            ws = new WebSocket(wsUrl);
-
-            ws.onopen = function () {
-                console.log('WebSocket connected for leaderboard');
-                showNotification('Connected to live updates');
-            };
-
-            ws.onmessage = throttle(function (event) {
-                const data = JSON.parse(event.data);
-                console.log('Received WebSocket data:', data);
-                if (data.leaderboard_data) {
-                    leaderboardData = data.leaderboard_data;
-                    filteredData = [...leaderboardData];
-                    sortTable(sortKey, isAscending); // Reapply sort after update
-                    showNotification('Leaderboard updated!');
-                }
-            }, 1000);
-
-            ws.onerror = function (error) {
-                console.error('WebSocket error:', error);
-                showNotification('Connection error occurred');
-            };
-
-            ws.onclose = function () {
-                console.log('WebSocket disconnected for leaderboard');
-                showNotification('Connection lost. Updates paused.');
-            };
-        } catch (error) {
-            console.error('WebSocket initialization failed:', error);
-            showNotification('Failed to connect to leaderboard updates');
-        }
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', () => ws?.close());
-
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.display = 'block';
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
-        }
-
-        function updateLeaderboard(data) {
-            const tbody = document.getElementById('leaderboard-body');
-            tbody.innerHTML = '';
-            const start = (currentPage - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paginatedData = data.slice(start, end);
-
-            paginatedData.forEach((entry, index) => {
-                const row = document.createElement('tr');
-                row.className = entry.username === '{{ request.user.username|escapejs }}' ? 'current-user' : '';
-                row.innerHTML = `
-                    <td>${start + index + 1}</td>
-                    <td>${escapeHtml(entry.username)}</td>
-                    <td>${entry.codeforces_rating ?? 'N/A'}</td>
-                    <td>${entry.leetcode_solved ?? 0}</td>
-                    <td>${entry.codechef_rating ?? 'N/A'}</td>
-                    <td>${entry.total_score.toFixed(0)}</td>
-                `;
-                row.style.animation = 'fadeIn 0.5s ease-in';
-                tbody.appendChild(row);
-            });
-
-            document.getElementById('page-info').textContent = `Page ${currentPage}`;
-            document.getElementById('prev-page').disabled = currentPage === 1;
-            document.getElementById('next-page').disabled = end >= data.length;
-        }
-
-        // Sorting Functionality
-        const table = document.getElementById('leaderboard-table');
-        table.querySelectorAll('th[data-sort]').forEach(header => {
-            header.addEventListener('click', () => {
-                sortKey = header.dataset.sort;
-                isAscending = header.classList.toggle('asc');
-                sortTable(sortKey, isAscending);
-            });
-
-            header.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    sortKey = header.dataset.sort;
-                    isAscending = header.classList.toggle('asc');
-                    sortTable(sortKey, isAscending);
-                }
-            });
-        });
-
-        function sortTable(key, ascending) {
-            filteredData.sort((a, b) => {
-                let aValue = a[key] ?? (key.includes('rating') ? -Infinity : 0);
-                let bValue = b[key] ?? (key.includes('rating') ? -Infinity : 0);
-
-                if (key === 'username') {
-                    return ascending
-                        ? aValue.localeCompare(bValue)
-                        : bValue.localeCompare(aValue);
-                }
-                return ascending ? aValue - bValue : bValue - aValue;
-            });
-            currentPage = 1;
-            updateLeaderboard(filteredData);
-        }
-
-        // Search Functionality with Debounce
-        const searchInput = document.getElementById('leaderboard-search');
-        let searchTimeout;
-        searchInput.addEventListener('input', () => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                const query = searchInput.value.toLowerCase();
-                filteredData = leaderboardData.filter(entry =>
-                    entry.username.toLowerCase().includes(query)
-                );
-                currentPage = 1;
-                sortTable(sortKey, isAscending); // Reapply sort after filter
-            }, 300);
-        });
-
-        // Pagination Controls
-        document.getElementById('prev-page').addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                updateLeaderboard(filteredData);
-            }
-        });
-
-        document.getElementById('next-page').addEventListener('click', () => {
-            if (currentPage * itemsPerPage < filteredData.length) {
-                currentPage++;
-                updateLeaderboard(filteredData);
-            }
-        });
-
-        // Utility Functions
-        function throttle(func, limit) {
-            let inThrottle;
-            return function (...args) {
-                if (!inThrottle) {
-                    func.apply(this, args);
-                    inThrottle = true;
-                    setTimeout(() => {
-                        inThrottle = false;
-                    }, limit);
-                }
-            };
-        }
-
-        function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        // Initial render handled by template, re-render if needed
-        sortTable('total_score', false); // Initial sort by total_score descending
-    });
-</script>
+<link rel="stylesheet" href="{% static 'css/compare.css' %}">
+<!-- Use json_script directly (no json_script needed in Django 5.1.6) -->
+{{ leaderboard_data|json_script:"leaderboard-data" }}
+<script src="{% static 'js/leaderboard.js' %}"></script>
 {% endblock %}

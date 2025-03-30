@@ -13,20 +13,6 @@
     --hover-bg: rgba(255, 255, 255, 0.1);
 }
 
-/* Dark mode variables */
-[data-theme="dark"] {
-    --primary-color: #34495e;
-    --secondary-color: #2980b9;
-    --accent-color: #c0392b;
-    --background-color: #1e1e1e;
-    --text-color: #ecf0f1;
-    --nav-bg: #2c3e50;
-    --nav-text: #ecf0f1;
-    --container-bg: #2d2d2d;
-    --shadow-color: rgba(255, 255, 255, 0.1);
-    --hover-bg: rgba(255, 255, 255, 0.2);
-}
-
 * {
     margin: 0;
     padding: 0;
@@ -54,7 +40,13 @@ nav {
     box-shadow: 0 2px 5px var(--shadow-color);
 }
 
-nav a {
+.nav-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-group a {
     color: var(--nav-text);
     text-decoration: none;
     margin: 0 1rem;
@@ -63,30 +55,9 @@ nav a {
     transition: all 0.3s ease;
 }
 
-nav a:hover {
+.nav-group a:hover {
     background: var(--hover-bg);
     transform: translateY(-2px);
-}
-
-.container {
-    max-width: 1200px;
-    width: 90%;
-    margin: 2rem auto;
-    padding: 2rem;
-    background: var(--container-bg);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px var(--shadow-color);
-    transition: transform 0.2s ease, background-color 0.3s;
-}
-
-.container:hover {
-    transform: translateY(-5px);
-}
-
-.nav-group {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
 }
 
 .user-info {
@@ -104,7 +75,51 @@ a[href*='signup']:hover, a[href*='login']:hover, a[href*='logout']:hover {
     background: var(--accent-color);
 }
 
-/* Custom Switch Styles */
+.container {
+    max-width: 1200px;
+    width: 90%;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--container-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    transition: transform 0.2s ease, background-color 0.3s;
+    min-height: calc(100vh - 120px); /* Adjusted for nav and footer */
+}
+
+.container:hover {
+    transform: translateY(-5px);
+}
+
+/* Messages styling */
+.messages {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.message {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.message.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.message.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Theme switcher styling */
+/* Theme switcher styling */
 .theme-switch-wrapper {
     display: flex;
     align-items: center;
@@ -112,24 +127,77 @@ a[href*='signup']:hover, a[href*='login']:hover, a[href*='logout']:hover {
 }
 
 .switch {
-    background-image: url('../images/off_bg.svg');
-    background-color: #252525;
-    background-size: cover;
-    width: 80px;    /* Reduced from 400px */
-    height: 30px;   /* Reduced from 150px */
-    border-radius: 30px; /* Adjusted to match height */
+    background-color: #3F83ED; /* Day mode (light) */
+    width: 80px;
+    height: 30px;
+    border-radius: 30px;
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
     cursor: pointer;
     transition: all 0.5s;
-    box-shadow: 0 -3px 4px 0 rgba(0,0,0,0.25), 0 4px 4px rgba(255,255,255,0.4), inset 0 1px 13px rgba(0,0,0,0.25), inset 0 7px 9px 0 rgba(0,0,0,0.25);
+    box-shadow: 0 -3px 4px 0 rgba(0,0,0,0.25),
+                0 4px 4px rgba(255,255,255,0.4),
+                inset 0 1px 13px rgba(0,0,0,0.25),
+                inset 0 7px 9px 0 rgba(0,0,0,0.25);
+}
+
+/* Clouds for day mode */
+.switch::before,
+.switch::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.7); /* Soft white clouds */
+    border-radius: 50%;
+    z-index: 1; /* Behind slider */
+}
+
+.switch::before {
+    width: 12px;
+    height: 12px;
+    top: 5px;
+    left: 15px;
+    box-shadow: 8px 2px 0 rgba(255, 255, 255, 0.7); /* Second cloud puff */
+}
+
+.switch::after {
+    width: 10px;
+    height: 10px;
+    bottom: 5px;
+    right: 20px;
 }
 
 .switch.on {
-    background-image: url('../images/on_bg.svg');
-    background-color: #3F83ED;
+    background-color: #252525; /* Night mode (dark) */
+}
+
+/* Stars for night mode */
+.switch.on::before,
+.switch.on::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.9); /* Bright stars */
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.8); /* Glow effect */
+    z-index: 1; /* Behind slider */
+}
+
+.switch.on::before {
+    width: 3px;
+    height: 3px;
+    top: 6px;
+    left: 10px;
+    box-shadow: 15px -2px 0 rgba(255, 255, 255, 0.9), /* Additional star */
+                0 0 4px rgba(255, 255, 255, 0.8);
+}
+
+.switch.on::after {
+    width: 2px;
+    height: 2px;
+    bottom: 6px;
+    right: 15px;
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
 }
 
 .switch input {
@@ -140,46 +208,140 @@ a[href*='signup']:hover, a[href*='login']:hover, a[href*='logout']:hover {
 }
 
 .switch .slider {
-    background-color: #9C9C9C;
-    background-image: url('../images/spots.svg');
-    background-repeat: no-repeat;
-    background-position: center;
+    background-color: #EDCB52; /* Sun */
     border-radius: 100%;
-    width: 25px;    /* Reduced from 125px, proportional to switch */
-    height: 25px;   /* Reduced from 125px */
+    width: 24px;
+    height: 24px;
     position: absolute;
-    left: 50px;     /* Adjusted from 255px, positions it near the right end */
+    left: 3px;
+    top: 3px;
     pointer-events: none;
     transition: all 0.5s;
-    box-shadow: inset 0 -5px 4px 0 #6A6A6A, inset 3px 4px 0 #CACACA3D;
+    box-shadow: inset 0 -5px 4px 0 #C1BC27,
+                inset 3px 4px 4px 0 #FEFFEF;
+    background: radial-gradient(circle at 40% 30%, #EDCB52, #C1BC27);
+    z-index: 2; /* Above stars/clouds */
 }
 
 .switch.on .slider {
-    left: 5px;      /* Adjusted from 20px, moves to left end */
-    background-image: none;
-    background-color: #EDCB52;
-    box-shadow: inset 0 -5px 4px 0 #C1BC27, inset 3px 4px 4px 0 #FEFFEF;
+    left: 53px; /* Moon position */
+    background-color: #9C9C9C;
+    box-shadow: inset 0 -5px 4px 0 #6A6A6A,
+                inset 3px 4px 0 rgba(202, 202, 202, 0.24);
+    background: radial-gradient(circle at 40% 30%, #9C9C9C, #6A6A6A);
 }
 
+.switch.on .slider::before,
+.switch.on .slider::after {
+    content: '';
+    position: absolute;
+    background: rgba(0, 0, 0, 0.2); /* Moon craters */
+    border-radius: 50%;
+    display: block;
+}
+
+.switch.on .slider::before {
+    width: 5px;
+    height: 5px;
+    top: 4px;
+    left: 4px;
+}
+
+.switch.on .slider::after {
+    width: 3px;
+    height: 3px;
+    bottom: 4px;
+    right: 4px;
+}
+
+#theme-label {
+    color: var(--nav-text);
+    font-size: 0.9rem;
+}
+
+/* Media query adjustments */
 @media (max-width: 768px) {
-    nav {
-        flex-direction: column;
-        padding: 1rem;
-    }
-
-    .nav-group {
-        margin: 0.5rem 0;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .container {
-        width: 95%;
-        margin: 1rem auto;
-    }
-
     .switch {
-        width: 60px;  /* Even smaller for mobile */
+        width: 60px;
+        height: 22.5px;
+        border-radius: 22.5px;
+    }
+
+    /* Clouds for day mode */
+    .switch::before {
+        width: 9px;
+        height: 9px;
+        top: 4px;
+        left: 10px;
+        box-shadow: 6px 1.5px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .switch::after {
+        width: 7.5px;
+        height: 7.5px;
+        bottom: 4px;
+        right: 15px;
+    }
+
+    /* Stars for night mode */
+    .switch.on::before {
+        width: 2.5px;
+        height: 2.5px;
+        top: 4.5px;
+        left: 8px;
+        box-shadow: 12px -1.5px 0 rgba(255, 255, 255, 0.9),
+                    0 0 3px rgba(255, 255, 255, 0.8);
+    }
+
+    .switch.on::after {
+        width: 1.5px;
+        height: 1.5px;
+        bottom: 4.5px;
+        right: 12px;
+        box-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+    }
+
+    .switch .slider {
+        width: 18px;
+        height: 18px;
+        left: 2.25px;
+        top: 2.25px;
+    }
+
+    .switch.on .slider {
+        left: 39.75px;
+    }
+
+    .switch.on .slider::before {
+        width: 4px;
+        height: 4px;
+        top: 3px;
+        left: 3px;
+    }
+
+    .switch.on .slider::after {
+        width: 2.5px;
+        height: 2.5px;
+        bottom: 3px;
+        right: 3px;
+    }
+}
+
+/* Footer styling */
+footer {
+    text-align: center;
+    padding: 1rem;
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Media query adjustments */
+@media (max-width: 768px) {
+    .switch {
+        width: 60px;
         height: 22.5px;
         border-radius: 22.5px;
     }
@@ -187,10 +349,53 @@ a[href*='signup']:hover, a[href*='login']:hover, a[href*='logout']:hover {
     .switch .slider {
         width: 18.75px;
         height: 18.75px;
-        left: 37.5px; /* Adjusted for smaller switch */
+        left: 3.75px;
     }
 
     .switch.on .slider {
+        left: 37.5px;
+    }
+
+    .switch.on .slider::before {
+        width: 4.5px;
+        height: 4.5px;
+        top: 3.75px;
         left: 3.75px;
     }
+
+    .switch.on .slider::after {
+        width: 3px;
+        height: 3px;
+        bottom: 3.75px;
+        right: 3.75px;
+    }
+
+    .nav-group {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .nav-group a {
+        margin: 0 0.5rem;
+        padding: 0.3rem 0.6rem;
+    }
+
+    .container {
+        padding: 1rem;
+        margin: 1rem auto;
+    }
+}
+
+/* Dark theme */
+body.dark-theme {
+    --primary-color: #34495e;
+    --secondary-color: #2980b9;
+    --accent-color: #c0392b;
+    --background-color: #1e1e1e;
+    --text-color: #ecf0f1;
+    --nav-bg: #2c3e50;
+    --nav-text: #ecf0f1;
+    --container-bg: #2d2d2d;
+    --shadow-color: rgba(255, 255, 255, 0.1);
+    --hover-bg: rgba(255, 255, 255, 0.2);
 }

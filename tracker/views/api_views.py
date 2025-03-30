@@ -8,7 +8,7 @@ from tracker.utils.codeforces import fetch_codeforces_rating_history
 from tracker.utils.selenium_scraper import fetch_codechef_contest_history_selenium
 
 @login_required
-def fetch_all_contest_history_view(request, username):
+def fetch_all_contest_history_view(username):
     try:
         print(f"Starting contest history fetch for {username}")
         data = asyncio.run(fetch_all_async(username))
@@ -48,7 +48,7 @@ def fetch_all_contest_history_view(request, username):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 @login_required
-def fetch_codeforces_history_view(request, username):
+def fetch_codeforces_history_view(username):
     try:
         data = fetch_codeforces_rating_history(username)
         return JsonResponse({"status": "success", "data": data}, safe=False)
@@ -57,7 +57,7 @@ def fetch_codeforces_history_view(request, username):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 @login_required
-def fetch_codechef_history_view(request, username):
+def fetch_codechef_history_view(username):
     try:
         data = fetch_codechef_contest_history_selenium(username)
         return JsonResponse({"status": "success", "data": data}, safe=False)
@@ -66,7 +66,7 @@ def fetch_codechef_history_view(request, username):
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 # Synchronous test view
-def test_db_connection(request):
+def test_db_connection():
     """Check MongoDB connection and return a list of users."""
     try:
         users = UserStats.objects.all()

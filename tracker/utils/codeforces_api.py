@@ -18,12 +18,15 @@ def fetch_codeforces_contest_history(username):
         data = response.json()
         
         print("✅ Codeforces API Response:", data)
-        
+
+        # Check for a successful response
         if data.get("status") != "OK":
             error_msg = data.get("comment", "Unknown error")
             return {"error": f"⚠️ Codeforces API Error: {error_msg}"}
         
         contests = data.get("result", [])
+
+        # Filter and format valid contest data
         valid_contests = [
             {
                 "contestId": c.get("contestId"),
@@ -37,7 +40,9 @@ def fetch_codeforces_contest_history(username):
         ]
         
         print("✅ Valid Contest Data:", valid_contests)
-        cache.set(cache_key, valid_contests, timeout=3600)  # Cache for 1 hour
+
+        # Cache the valid contest data for 1 hour
+        cache.set(cache_key, valid_contests, timeout=3600)
         return valid_contests if valid_contests else {"message": "⚠️ No contest history available."}
     
     except requests.exceptions.Timeout:
@@ -54,12 +59,15 @@ def fetch_codeforces_contest_history(username):
         return {"error": f"⚠️ Unexpected error: {e}"}
 
 # API View
-def fetch_codeforces_history_view(request, username):
+def fetch_codeforces_history_view(username):
     """API view for fetching Codeforces contest history."""
     try:
         result = fetch_codeforces_contest_history(username)
+
+        # Check for errors in the result
         if isinstance(result, dict) and "error" in result:
             return JsonResponse(result, status=400 if "API Error" in result["error"] else 500)
+
         return JsonResponse({"status": "success", "data": result}, safe=False)
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)

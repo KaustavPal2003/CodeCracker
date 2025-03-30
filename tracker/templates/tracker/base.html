@@ -9,41 +9,61 @@
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
 </head>
 <body>
-    <nav>
+    <nav role="navigation" aria-label="Main navigation">
         <div class="nav-group">
-            <a href="{% url 'home' %}">🏠 Home</a>
+            <a href="{% url 'tracker:home' %}" aria-label="Go to homepage">🏠 Home</a>
             {% if request.user.is_authenticated %}
-                <a href="{% url 'fetch_user_stats' request.user.username %}">📊 Stats</a>
-                <a href="{% url 'user_performance' request.user.username %}">📈 Performance</a>
-                <a href="{% url 'compare_stats' %}">🆚 Compare</a>
-                <a href="{% url 'leaderboard' %}">🏆 Leaderboard</a>
+                <a href="{% url 'tracker:fetch_user_stats' request.user.username %}" aria-label="View your stats">📊 Stats</a>
+                <a href="{% url 'tracker:user_performance' request.user.username %}" aria-label="View your performance">📈 Performance</a>
+                <a href="{% url 'tracker:compare_stats' %}" aria-label="Compare with others">🆚 Compare</a>
+                <a href="{% url 'tracker:leaderboard' %}" aria-label="View leaderboard">🏆 Leaderboard</a>
+                <a href="{% url 'tracker:add_user' %}" aria-label="Add a new user">➕ Add User</a>
             {% else %}
-                <a href="{% url 'login' %}">📊 Stats</a>
-                <a href="{% url 'login' %}">📈 Performance</a>
-                <a href="{% url 'login' %}">🆚 Compare</a>
-                <a href="{% url 'leaderboard' %}">🏆 Leaderboard</a>
+                <a href="{% url 'tracker:login' %}" aria-label="Login to view stats">📊 Stats</a>
+                <a href="{% url 'tracker:login' %}" aria-label="Login to view performance">📈 Performance</a>
+                <a href="{% url 'tracker:login' %}" aria-label="Login to compare with others">🆚 Compare</a>
+                <a href="{% url 'tracker:leaderboard' %}" aria-label="View leaderboard">🏆 Leaderboard</a>
             {% endif %}
         </div>
         <div class="nav-group">
             {% if request.user.is_authenticated %}
-                <span class="user-info">👤 {{ request.user.username }}</span>
-                <a href="{% url 'logout' %}">🚪 Logout</a>
+                <span class="user-info" aria-label="Logged in user">👤 {{ request.user.username }}</span>
+                <a href="{% url 'tracker:logout' %}" aria-label="Logout">🚪 Logout</a>
             {% else %}
-                <a href="{% url 'signup' %}">📝 Signup</a>
-                <a href="{% url 'login' %}">🔑 Login</a>
+                <a href="{% url 'tracker:signup' %}" aria-label="Sign up">📝 Signup</a>
+                <a href="{% url 'tracker:login' %}" aria-label="Login">🔑 Login</a>
             {% endif %}
             <div class="theme-switch-wrapper">
-                <label class="switch">
-                    <input type="checkbox" id="checkbox">
+                <label class="switch" for="checkbox" aria-label="Toggle theme">
+                    <input type="checkbox" id="checkbox" aria-label="Theme toggle">
                     <span class="slider"></span>
                 </label>
-                <span></span>
+                <span id="theme-label" aria-live="polite"></span>
             </div>
         </div>
     </nav>
+
     <div class="container">
+        <!-- Display Django messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="message {% if message.tags %}{{ message.tags }}{% endif %}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Main content block -->
         {% block content %}{% endblock %}
     </div>
+
+    <footer>
+        <p>© 2025 CodeCracker. All rights reserved.</p>
+    </footer>
+
     <script src="{% static 'js/theme.js' %}"></script>
+
 </body>
 </html>

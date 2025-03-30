@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 # Load environment variables from a .env file
 load_dotenv()
 
-# Base directory
+# Base directory for the project
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -21,22 +21,26 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 # settings.py
 _MONGO_CONNECTED = False
 
+
 def connect_to_mongodb():
     global _MONGO_CONNECTED
-    if not _MONGO_CONNECTED:
-        username = urllib.parse.quote_plus(os.getenv('MONGO_USERNAME', ''))
-        password = urllib.parse.quote_plus(os.getenv('MONGO_PASSWORD', ''))
-        mongo_uri = (
-            f"mongodb+srv://{username}:{password}@cluster1.3mai1.mongodb.net/"
-            f"codecracker_db?retryWrites=true&w=majority"
-        )
-        try:
-            connect(host=mongo_uri, alias='default')
-            print("✅ Successfully connected to MongoDB!")
-            _MONGO_CONNECTED = True
-        except Exception as e:
-            print(f"❌ Failed to connect to MongoDB: {str(e)}")
-            raise
+    if _MONGO_CONNECTED:
+        return  # No need to connect again
+
+    username = urllib.parse.quote_plus(os.getenv('MONGO_USERNAME', ''))
+    password = urllib.parse.quote_plus(os.getenv('MONGO_PASSWORD', ''))
+    mongo_uri = (
+        f"mongodb+srv://{username}:{password}@cluster1.3mai1.mongodb.net/"
+        f"codecracker_db?retryWrites=true&w=majority"
+    )
+
+    try:
+        connect(host=mongo_uri, alias='default')
+        print("✅ Successfully connected to MongoDB!")
+        _MONGO_CONNECTED = True
+    except Exception as e:
+        print(f"❌ Failed to connect to MongoDB: {str(e)}")
+        raise
 
 # Call only once
 connect_to_mongodb()

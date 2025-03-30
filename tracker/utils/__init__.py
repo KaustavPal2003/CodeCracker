@@ -6,7 +6,6 @@ from .codeforces import (
 )
 from .leetcode import (
     fetch_leetcode_stats,
-    fetch_leetcode_rating_history
 )
 from .codechef import (
     fetch_codechef_rating,
@@ -19,10 +18,15 @@ from .tasks import (
     fetch_and_store_user_stats_task,
     fetch_and_store_rating_history_task  # Add if exists in tasks.py
 )
-from .fetch_stats import (
-    fetch_and_store_user_stats,
-    fetch_and_store_rating_history,
-    fetch_and_store_rating_history_async  # Add async version
+from .async_fetchers import (
+    fetch_and_store_rating_history_async  # Async rating history fetcher
+)
+from .sync_fetchers import (
+    fetch_and_store_rating_history,       # Sync rating history fetcher
+    fetch_and_store_user_stats            # Sync user stats fetcher
+)
+from .fetch_coordinator import (
+    fetch_and_store_all                   # Main async coordinator for all data
 )
 from .contest_tracker import (
     fetch_all_async  # Include the multi-platform async fetcher

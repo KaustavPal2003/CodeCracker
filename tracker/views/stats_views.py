@@ -1,93 +1,21 @@
-from django.shortcuts import render, redirect
+# tracker/views/stats_views.py
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.http import require_GET, require_POST
-from tracker.models import UserStats, RatingHistory
-from tracker.utils.fetch_stats import fetch_and_store_rating_history_async
-from asgiref.sync import sync_to_async
+from django.views.decorators.http import require_GET
+from django.shortcuts import render, redirect
 from django.core.cache import cache
-from channels.layers import get_channel_layer
+from asgiref.sync import sync_to_async
+from tracker.models import UserStats, RatingHistory
+from tracker.utils.async_fetchers import fetch_and_store_rating_history_async
+from tracker.utils.sync_fetchers import fetch_and_store_rating_history
 from datetime import datetime
-
-from django.shortcuts import render
-from django.contrib.auth.models import User
-
-from django.shortcuts import render
-from tracker.models import UserStats  # Import your UserStats model
-
-
-# tracker/views/user_views.py
 from django.http import JsonResponse
-from mongoengine import Document, StringField, ListField
-
-class SavedComparison(Document):
-    username = StringField(required=True)
-    compare_to = StringField(required=True)
-    meta = {'collection': 'saved_comparisons'}
-
-def save_comparison(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        username = data.get('username')
-        compare_to = data.get('compare_to')
-        if username and compare_to:
-            SavedComparison(username=username, compare_to=compare_to).save()
-            return JsonResponse({'success': True})
-        return JsonResponse({'success': False, 'error': 'Invalid data'}, status=400)
-    return JsonResponse({'success': False, 'error': 'Method not allowed'}, status=405)
 
 
-# tracker/views/user_views.py
-from django.shortcuts import render
-from tracker.models import UserStats
-
-def dashboard_view(request):
-    # Optional: Fetch some user stats for display on the dashboard
-    user_stats = None
-    if request.user.is_authenticated:
-        try:
-            user_stats = UserStats.objects(username=request.user.username).first()
-        except UserStats.DoesNotExist:
-            user_stats = None
-    context = {
-        'user_stats': user_stats,
-    }
-    return render(request, 'tracker/dashboard.html', context)
-
-
-
-def leaderboard_view(request):
-    # Fetch all user stats from the UserStats collection
-    user_stats = UserStats.objects.all()
-    leaderboard_data = []
-
-    for stats in user_stats:
-        # Calculate a total score (example: weighted sum)
-        total_score = (
-            (float(stats.codeforces_rating or 0) * 0.4) +
-            (float(stats.leetcode_solved or 0) * 0.2) +
-            (float(stats.codechef_rating or 0) * 0.4)
-        )
-        leaderboard_data.append({
-            'username': stats.username,
-            'codeforces_rating': stats.codeforces_rating,
-            'leetcode_solved': stats.leetcode_solved,
-            'codechef_rating': stats.codechef_rating,
-            'total_score': total_score
-        })
-
-    # Sort by total_score in descending order
-    leaderboard_data.sort(key=lambda x: x['total_score'], reverse=True)
-
-    return render(request, 'tracker/leaderboard.html', {'leaderboard_data': leaderboard_data})
-
-
-# View to fetch user stats and render a template
 @login_required
 @require_GET
 async def fetch_user_stats(request, username):
     print(f"Fetching stats for user: {username}")
-    
+
     logged_in_username = await sync_to_async(lambda: request.user.username)()
     if logged_in_username != username:
         return await sync_to_async(render)(request, "tracker/error.html", {"message": "Unauthorized access"})
@@ -124,17 +52,19 @@ async def fetch_user_stats(request, username):
         print(f"No contest history found for {username}")
 
     if processed_history:
-        user_stats.codeforces_rating = max((h["new_rating"] for h in processed_history if h["platform"] == "Codeforces"), default=None)
-        user_stats.codechef_rating = max((h["new_rating"] for h in processed_history if h["platform"] == "Codechef"), default=None)
+        user_stats.codeforces_rating = max(
+            (h["new_rating"] for h in processed_history if h["platform"] == "Codeforces"), default=None)
+        user_stats.codechef_rating = max((h["new_rating"] for h in processed_history if h["platform"] == "Codechef"),
+                                         default=None)
         user_stats.leetcode_solved = lc_solved if lc_solved is not None else 0
         user_stats.rating_history = [RatingHistory(**entry) for entry in processed_history]
-    else:
+    '''else:
         from tracker.utils.fetch_stats import fetch_latest_rating
         latest_cf_rating = await fetch_latest_rating(username, platform="Codeforces")
         user_stats.codeforces_rating = latest_cf_rating if latest_cf_rating is not None else None
         user_stats.codechef_rating = await fetch_latest_rating(username, platform="Codechef") if latest_cf_rating is None else None
         user_stats.leetcode_solved = lc_solved if lc_solved is not None else 0
-        user_stats.rating_history = []
+        user_stats.rating_history = []'''
 
     await sync_to_async(user_stats.save)()
 
@@ -147,6 +77,7 @@ async def fetch_user_stats(request, username):
     }
 
     return await sync_to_async(render)(request, "tracker/stats.html", context)
+
 
 @login_required
 async def fetch_user_rating_history(request, username):
@@ -184,9 +115,11 @@ async def fetch_user_rating_history(request, username):
         }
         processed_history.append(entry_dict)
 
-    user_stats.codeforces_rating = max((h["new_rating"] for h in processed_history if h["platform"] == "Codeforces"), default=0)
+    user_stats.codeforces_rating = max((h["new_rating"] for h in processed_history if h["platform"] == "Codeforces"),
+                                       default=0)
     user_stats.leetcode_solved = lc_solved
-    user_stats.codechef_rating = max((h["new_rating"] for h in processed_history if h["platform"] == "Codechef"), default=0)
+    user_stats.codechef_rating = max((h["new_rating"] for h in processed_history if h["platform"] == "Codechef"),
+                                     default=0)
     user_stats.rating_history = [RatingHistory(**entry) for entry in processed_history]
     await sync_to_async(user_stats.save)()
 
@@ -219,9 +152,11 @@ async def fetch_user_rating_history(request, username):
                 }
                 compare_history.append(entry_dict)
 
-            compare_user_stats.codeforces_rating = max((h["new_rating"] for h in compare_history if h["platform"] == "Codeforces"), default=0)
+            compare_user_stats.codeforces_rating = max(
+                (h["new_rating"] for h in compare_history if h["platform"] == "Codeforces"), default=0)
             compare_user_stats.leetcode_solved = compare_lc_solved
-            compare_user_stats.codechef_rating = max((h["new_rating"] for h in compare_history if h["platform"] == "Codechef"), default=0)
+            compare_user_stats.codechef_rating = max(
+                (h["new_rating"] for h in compare_history if h["platform"] == "Codechef"), default=0)
             compare_user_stats.rating_history = [RatingHistory(**entry) for entry in compare_history]
             await sync_to_async(compare_user_stats.save)()
         else:
@@ -232,14 +167,15 @@ async def fetch_user_rating_history(request, username):
         "compare_rating_history": compare_history
     })
 
-# Other views (unchanged)
+
 @login_required
 async def compare_performance(request):
     print(f"Accessing performance page for logged-in user")
-    
+
     user = request.user
     if not user.is_authenticated:
-        return await sync_to_async(render)(request, "tracker/error.html", {"message": "Please log in to view performance trends"})
+        return await sync_to_async(render)(request, "tracker/error.html",
+                                           {"message": "Please log in to view performance trends"})
 
     user_stats = await sync_to_async(UserStats.objects(username=user.username).no_cache().first)()
     if not user_stats:
@@ -250,8 +186,9 @@ async def compare_performance(request):
         "user": user_stats,
         "username": user.username,
     }
-    
+
     return await sync_to_async(render)(request, "tracker/performance.html", context)
+
 
 def user_performance_view(request, username):
     if not username:
@@ -261,16 +198,11 @@ def user_performance_view(request, username):
         return render(request, "tracker/performance.html", {"error": "User not found"})
     return render(request, "tracker/performance.html", {"username": username, "user": user})
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from tracker.models import UserStats
-from django.core.cache import cache
-from tracker.utils.fetch_stats import fetch_and_store_rating_history
 
 @login_required
 def user_stats(request, username):
     if username != request.user.username:
-        return redirect('user_stats', username=request.user.username)
+        return redirect('tracker:user_stats', username=request.user.username)
 
     stats = UserStats.objects(username=username).first()
     if not stats:
@@ -291,66 +223,10 @@ def user_stats(request, username):
     codeforces_rating = stats.codeforces_rating if stats.codeforces_rating is not None else "N/A"
     codechef_rating = stats.codechef_rating if stats.codechef_rating is not None else "N/A"
 
-    return render(request, 'tracker/user_stats.html', {
+    return render(request, 'tracker/stats.html', {
         'username': username,
         'codeforces_rating': codeforces_rating,
         'leetcode_solved': leetcode_solved,
         'codechef_rating': codechef_rating,
         'rating_history': rating_history,
     })
-
-@login_required
-def compare_stats(request):
-    username = request.user.username
-    stats = UserStats.objects(username=username).first()
-    if not stats:
-        return render(request, 'tracker/compare.html', {'message': 'User stats not found.', 'username': username})
-
-    cache_key = f"rating_history_{username}"
-    rating_history = cache.get(cache_key)
-
-    if not rating_history:
-        rating_history, leetcode_solved = fetch_and_store_rating_history(username)
-        cache.set(cache_key, rating_history, timeout=None)
-    else:
-        leetcode_solved = stats.leetcode_solved
-
-    rating_history.sort(key=lambda x: x.date or datetime.min)
-    rating_history = rating_history[-50:]
-
-    codeforces_rating = stats.codeforces_rating if stats.codeforces_rating is not None else "N/A"
-    codechef_rating = stats.codechef_rating if stats.codechef_rating is not None else "N/A"
-
-    return render(request, 'tracker/compare.html', {
-        'username': username,
-        'codeforces_rating': codeforces_rating,
-        'leetcode_solved': leetcode_solved,
-        'codechef_rating': codechef_rating,
-        'rating_history': rating_history,
-    })
-
-def home(request):
-    return render(request, "tracker/home.html")
-
-def add_user(request):
-    if request.method == "POST":
-        try:
-            username = request.POST.get("username")
-            codeforces_rating = int(request.POST.get("codeforces_rating", 0))
-            leetcode_solved = int(request.POST.get("leetcode_solved", 0))
-            codechef_rating = int(request.POST.get("codechef_rating", 0))
-            if not username:
-                return render(request, "tracker/add_user.html", {"error": "Username is required"})
-            new_user = UserStats(
-                username=username,
-                codeforces_rating=codeforces_rating,
-                leetcode_solved=leetcode_solved,
-                codechef_rating=codechef_rating
-            )
-            new_user.save()
-            return redirect("home")
-        except ValueError:
-            return render(request, "tracker/add_user.html", {"error": "Invalid rating values"})
-        except Exception as e:
-            return render(request, "tracker/add_user.html", {"error": str(e)})
-    return render(request, "tracker/add_user.html")

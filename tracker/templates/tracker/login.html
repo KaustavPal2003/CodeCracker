@@ -24,10 +24,10 @@
             <button type="submit" class="auth-button">Login</button>
         </form>
         <p class="auth-link">
-            Don’t have an account? <a href="{% url 'signup' %}">Signup here</a>
+            Don’t have an account? <a href="{% url 'tracker:signup' %}">Signup here</a>
         </p>
     </div>
 
     <!-- Load Shared Auth CSS -->
-    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
 {% endblock %}

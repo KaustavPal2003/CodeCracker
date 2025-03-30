@@ -1,0 +1,49 @@
+<!-- tracker/templates/tracker/add_user.html -->
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Add User{% endblock %}
+
+{% block content %}
+<div class="container form-wrapper">
+    <div class="auth-container">
+        <h2>📝 Add New User</h2>
+
+        <!-- Display error messages if any -->
+        {% if error %}
+        <div class="errorlist" role="alert">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Form to add a new user -->
+        <form method="POST" class="auth-form">
+            {% csrf_token %}
+            <div class="form-field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter username" required>
+            </div>
+            <div class="form-field">
+                <label for="codeforces_rating">Codeforces Rating</label>
+                <input type="number" id="codeforces_rating" name="codeforces_rating" placeholder="Enter Codeforces rating" value="0" min="0">
+            </div>
+            <div class="form-field">
+                <label for="leetcode_solved">LeetCode Problems Solved</label>
+                <input type="number" id="leetcode_solved" name="leetcode_solved" placeholder="Enter LeetCode problems solved" value="0" min="0">
+            </div>
+            <div class="form-field">
+                <label for="codechef_rating">CodeChef Rating</label>
+                <input type="number" id="codechef_rating" name="codechef_rating" placeholder="Enter CodeChef rating" value="0" min="0">
+            </div>
+            <button type="submit" class="auth-button">Add User</button>
+        </form>
+
+        <!-- Link to go back to the dashboard -->
+        <div class="auth-link">
+            <a href="{% url 'tracker:home' %}">⬅ Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="{% static 'css/forms.css' %}">
+{% endblock %}

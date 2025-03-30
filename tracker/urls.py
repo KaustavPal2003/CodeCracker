@@ -1,29 +1,55 @@
 # tracker/urls.py
 from django.urls import path
-from .views import api_views, auth_views, user_views
+from .views.api_views import (
+    fetch_codechef_history_view,
+    fetch_codeforces_history_view,
+    fetch_all_contest_history_view,
+    test_db_connection,
+)
+from .views.auth_views import signup_view, login_view, logout_view
+from .views.dashboard_views import dashboard_view
+from .views.leaderboard_views import leaderboard_view
+from .views.stats_views import (
+    fetch_user_stats,
+    fetch_user_rating_history,
+    user_performance_view,
+    user_stats,
+    compare_performance,
+)
+from .views.comparison_views import compare_stats, save_comparison
+from .views.user_management_views import add_user
+
+app_name = 'tracker'  # Namespace for the app
 
 urlpatterns = [
-    path('api/codechef/<str:username>/', api_views.fetch_codechef_history_view, name='fetch_codechef_history'),
-    path('api/codeforces/<str:username>/', api_views.fetch_codeforces_history_view, name='fetch_codeforces_history'),
-    path('api/contests/<str:username>/', api_views.fetch_all_contest_history_view, name='fetch_all_contest_history'),
-    path('api/test-db/', api_views.test_db_connection, name='test_db_connection'),
-path('stats/<str:username>/', user_views.fetch_user_stats, name='stats'),
-    path('stats/<str:username>/', user_views.fetch_user_stats, name='fetch_user_stats'),  # Changed to user_views
-    path('signup/', auth_views.signup_view, name='signup'),
-    path('login/', auth_views.login_view, name='login'),
-    path('logout/', auth_views.logout_view, name='logout'),
+    # API endpoints
+    path('api/codechef/<str:username>/', fetch_codechef_history_view, name='fetch_codechef_history'),
+    path('api/codeforces/<str:username>/', fetch_codeforces_history_view, name='fetch_codeforces_history'),
+    path('api/contests/<str:username>/', fetch_all_contest_history_view, name='fetch_all_contest_history'),
+    path('api/test-db/', test_db_connection, name='test_db_connection'),
 
-    path('add-user/', user_views.add_user, name='add_user'),
-    path('performance/<str:username>/', user_views.user_performance_view, name='user_performance'),
-    path('rating-history/<str:username>/', user_views.fetch_user_rating_history, name='fetch_user_rating_history'),
-path('stats/<str:username>/', user_views.fetch_user_stats, name='user_stats'),
-    path('performance/', user_views.compare_performance, name='compare_performance'),
-    path('rating-history/<str:username>/', user_views.fetch_user_rating_history, name='fetch_user_rating_history'),
-path('compare/', user_views.compare_stats, name='compare_stats'),
-path('stats/<str:username>/', user_views.user_stats, name='user_stats'),
-path('leaderboard/', user_views.leaderboard_view, name='leaderboard'),
-# urls.py
-path('save_comparison/', user_views.save_comparison, name='save_comparison'),
-# urls.py
-path('', user_views.dashboard_view, name='home'),
+    # Authentication views
+    path('signup/', signup_view, name='signup'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+
+    # Dashboard and home
+    path('', dashboard_view, name='home'),  # Dashboard view as the homepage
+
+    # Leaderboard
+    path('leaderboard/', leaderboard_view, name='leaderboard'),
+
+    # User stats and performance
+    path('stats/<str:username>/', fetch_user_stats, name='fetch_user_stats'),  # Fetch user stats (async)
+    path('user-stats/<str:username>/', user_stats, name='user_stats'),  # Sync version of user stats
+    path('performance/<str:username>/', user_performance_view, name='user_performance'),
+    path('compare-performance/', compare_performance, name='compare_performance'),
+    path('rating-history/<str:username>/', fetch_user_rating_history, name='fetch_user_rating_history'),
+
+    # Comparison
+    path('compare/', compare_stats, name='compare_stats'),
+    path('save-comparison/', save_comparison, name='save_comparison'),
+
+    # User management
+    path('add-user/', add_user, name='add_user'),
 ]
