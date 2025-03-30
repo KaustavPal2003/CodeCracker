@@ -178,6 +178,40 @@ h3 {
     transform: translateY(-2px);
 }
 
+/* static/css/compare.css */
+/* ... (previous styles unchanged up to .auth-button) */
+
+.auth-button {
+    background-color: var(--secondary-color);
+    color: var(--nav-text);
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.auth-button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.auth-button:hover:not(:disabled) {
+    background-color: var(--accent-color);
+    transform: translateY(-2px);
+}
+
+#refresh-button {
+    background-color: #2ecc71;
+}
+
+#refresh-button:hover:not(:disabled) {
+    background-color: #27ae60;
+}
+
+/* ... (rest of the styles unchanged) */
 #save-comparison {
     background-color: #2ecc71;
 }

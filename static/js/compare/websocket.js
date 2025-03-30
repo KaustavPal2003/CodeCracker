@@ -1,19 +1,21 @@
-// websocket.js
 function initWebSocket(wsUrl, user1Username, getUser2Username, chart, updateStats, updateChart) {
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = function () {
         console.log(`WebSocket connected for ${user1Username}`);
-        document.getElementById('loading-spinner').style.display = 'block';
+        // Spinner is handled in main.js, no need to show it here
     };
 
     ws.onmessage = debounce(function (event) {
         const data = JSON.parse(event.data);
         console.log('Received WebSocket data:', data);
-        document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('loading-spinner').style.display = 'none'; // Hide spinner after data is received
 
         if (data.error) {
             showError(data.error);
+            if (data.error.includes('No user found for comparison')) {
+                document.getElementById('user2_username').value = ''; // Clear the textbox
+            }
             return;
         }
 
@@ -29,8 +31,11 @@ function initWebSocket(wsUrl, user1Username, getUser2Username, chart, updateStat
     }, 300);
 
     ws.onclose = function () {
-        console.log(`WebSocket disconnected for ${user1Username}`);
-        showError('WebSocket connection lost. Please refresh the page.');
+        console.log(`WebSocket closed for ${user1Username}`);
+        // Only show error if data hasn’t been received yet
+        if (!lastData) {
+            showError('WebSocket connection lost. Please refresh the page.');
+        }
     };
 
     ws.onerror = function (error) {

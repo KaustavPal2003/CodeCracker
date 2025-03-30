@@ -3,6 +3,7 @@ from tracker.utils.sync_fetchers import fetch_and_store_rating_history
 from tracker.models import UserStats
 from django.core.cache import cache
 from asgiref.sync import sync_to_async
+import json
 
 class StatsConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -17,48 +18,56 @@ class StatsConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        compare_to = data.get('compare_to')
-        self.compare_to = compare_to if compare_to else None
-        await self.send_initial_data()
+        self.compare_to = data.get('compare_to')
+        force_refresh = data.get('force_refresh', False)  # Manual refresh flag
+        await self.send_initial_data(force_refresh=force_refresh)
 
-    async def send_initial_data(self):
+    async def send_initial_data(self, force_refresh=False):
         user_stats = await sync_to_async(UserStats.objects.filter(username=self.username).first)()
         if not user_stats:
-            await self.send(text_data=json.dumps({'error': 'User stats not found.'}))
+            await self.send(text_data=json.dumps({'error': f'User stats not found for {self.username}.'}))
             return
 
         cache_key = f'rating_history_{self.username}'
-        rating_history = await sync_to_async(cache.get)(cache_key)
+        rating_history = await sync_to_async(cache.get)(cache_key) if not force_refresh else None
 
         if not rating_history:
             rating_history, leetcode_solved = await sync_to_async(fetch_and_store_rating_history)(self.username)
-            await sync_to_async(cache.set)(cache_key, rating_history, timeout=None)
+            await sync_to_async(cache.set)(cache_key, rating_history, timeout=86400)  # 24-hour cache
         else:
-            leetcode_solved = user_stats.leetcode_solved
+            leetcode_solved = user_stats.leetcode_solved if user_stats.leetcode_solved is not None else 0
+
+        has_no_ratings = (
+            (user_stats.codeforces_rating is None or user_stats.codeforces_rating == 0) and
+            (user_stats.codechef_rating is None or user_stats.codechef_rating == 0) and
+            leetcode_solved == 0 and
+            (not rating_history or len(rating_history) == 0)
+        )
 
         compare_rating_history = []
         leetcode_solved_compare = 0
-        if hasattr(self, 'compare_to') and self.compare_to:
+        if self.compare_to:
             compare_stats = await sync_to_async(UserStats.objects.filter(username=self.compare_to).first)()
             if compare_stats:
                 compare_cache_key = f'rating_history_{self.compare_to}'
-                compare_rating_history = await sync_to_async(cache.get)(compare_cache_key)
+                compare_rating_history = await sync_to_async(cache.get)(compare_cache_key) if not force_refresh else None
                 if not compare_rating_history:
                     compare_rating_history, leetcode_solved_compare = await sync_to_async(fetch_and_store_rating_history)(self.compare_to)
-                    await sync_to_async(cache.set)(compare_cache_key, compare_rating_history, timeout=None)
+                    await sync_to_async(cache.set)(compare_cache_key, compare_rating_history, timeout=86400)
                 else:
                     leetcode_solved_compare = compare_stats.leetcode_solved if compare_stats.leetcode_solved is not None else 0
             else:
-                await self.send(text_data=json.dumps({'error': f'Comparison user {self.compare_to} not found.'}))
+                await self.send(text_data=json.dumps({'error': f'No user found for comparison: {self.compare_to}'}))
                 return
 
         data = {
             'codeforces_rating': user_stats.codeforces_rating if user_stats.codeforces_rating is not None else 'N/A',
             'codechef_rating': user_stats.codechef_rating if user_stats.codechef_rating is not None else 'N/A',
-            'leetcode_solved': leetcode_solved if leetcode_solved is not None else 0,
+            'leetcode_solved': leetcode_solved,
             'rating_history': [h.to_dict() for h in rating_history] if rating_history else [],
             'compare_rating_history': [h.to_dict() for h in compare_rating_history] if compare_rating_history else [],
-            'leetcode_solved_compare': leetcode_solved_compare
+            'leetcode_solved_compare': leetcode_solved_compare,
+            'has_no_ratings': has_no_ratings
         }
 
         print(f"Sending data: {data}")
@@ -67,19 +76,15 @@ class StatsConsumer(AsyncWebsocketConsumer):
     async def update_stats(self, event):
         await self.send_initial_data()
 
-# LeaderboardConsumer unchanged
-import json
-from channels.generic.websocket import WebsocketConsumer
+class LeaderboardConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        await self.accept()
 
-class LeaderboardConsumer(WebsocketConsumer):
-    def connect(self):
-        self.accept()
-
-    def disconnect(self, close_code):
+    async def disconnect(self, close_code):
         pass
 
-    def receive(self, text_data):
+    async def receive(self, text_data):
         pass
 
-    def send_leaderboard(self, data):
-        self.send(text_data=json.dumps({'leaderboard_data': data}))
+    async def send_leaderboard(self, data):
+        await self.send(text_data=json.dumps({'leaderboard_data': data}))
