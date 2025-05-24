@@ -1,6 +1,9 @@
 # tracker/urls.py
 from django.urls import path
+
+from .views import comparison_views
 from .views.api_views import (
+    get_suggestions,
     fetch_codechef_history_view,
     fetch_codeforces_history_view,
     fetch_all_contest_history_view,
@@ -16,13 +19,14 @@ from .views.stats_views import (
     user_stats,
     compare_performance,
 )
-from .views.comparison_views import compare_stats, save_comparison
+from .views.comparison_views import compare_stats, save_comparison, check_user_status
 from .views.user_management_views import add_user
 
 app_name = 'tracker'  # Namespace for the app
 
 urlpatterns = [
     # API endpoints
+    path('api/suggestions/', get_suggestions, name='get_suggestions'),
     path('api/codechef/<str:username>/', fetch_codechef_history_view, name='fetch_codechef_history'),
     path('api/codeforces/<str:username>/', fetch_codeforces_history_view, name='fetch_codeforces_history'),
     path('api/contests/<str:username>/', fetch_all_contest_history_view, name='fetch_all_contest_history'),
@@ -44,6 +48,8 @@ urlpatterns = [
     path('user-stats/<str:username>/', user_stats, name='user_stats'),  # Sync version of user stats
     path('performance/<str:username>/', user_performance_view, name='user_performance'),
     path('compare-performance/', compare_performance, name='compare_performance'),
+
+    path('check_status/<str:username>/', check_user_status, name='check_user_status'),
     path('rating-history/<str:username>/', fetch_user_rating_history, name='fetch_user_rating_history'),
 
     # Comparison

@@ -19,3 +19,5 @@ def fetch_leetcode_stats(username):
     except Exception as e:
         print(f"⚠️ LeetCode API Error: {e}")
     return 0
+
+

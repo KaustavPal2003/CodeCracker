@@ -72,7 +72,11 @@
 </div>
 
 <!-- CSS and JS -->
-<link rel="stylesheet" href="{% static 'css/compare.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/stats.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/responsive.css' %}">
 <!-- Use json_script directly (no json_script needed in Django 5.1.6) -->
 {{ leaderboard_data|json_script:"leaderboard-data" }}
 <script src="{% static 'js/leaderboard.js' %}"></script>

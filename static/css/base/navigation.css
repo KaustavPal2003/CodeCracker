@@ -1,0 +1,47 @@
+nav {
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 5px var(--shadow-color);
+}
+
+.nav-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-group a {
+    color: var(--nav-text);
+    text-decoration: none;
+    margin: 0 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.nav-group a:hover {
+    background: var(--hover-bg);
+    transform: translateY(-2px);
+}
+
+.user-info {
+    background: var(--hover-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    margin-right: 1rem;
+}
+
+a[href*='signup'], a[href*='login'], a[href*='logout'] {
+    background: var(--secondary-color);
+}
+
+a[href*='signup']:hover, a[href*='login']:hover, a[href*='logout']:hover {
+    background: var(--accent-color);
+}

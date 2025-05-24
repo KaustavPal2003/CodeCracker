@@ -1,0 +1,15 @@
+.container {
+    max-width: 1200px;
+    width: 90%;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--container-bg);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    transition: transform 0.2s ease, background-color 0.3s;
+    min-height: calc(100vh - 120px);
+}
+
+.container:hover {
+    transform: translateY(-5px);
+}

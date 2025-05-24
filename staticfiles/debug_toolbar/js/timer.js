@@ -83,6 +83,6 @@ function insertBrowserTiming() {
 
 const djDebug = document.getElementById("djDebug");
 // Insert the browser timing now since it's possible for this
-// script to miss the initial panel load event.
+// scripts to miss the initial panel load event.
 insertBrowserTiming();
 $$.onPanelRender(djDebug, "TimerPanel", insertBrowserTiming);

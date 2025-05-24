@@ -4,14 +4,15 @@
 {% block title %}Compare Stats{% endblock %}
 
 {% block content %}
-<div class="performance-container">
+<div class="performance-container" role="main">
     <h2>🆚 Compare Stats</h2>
 
     <!-- Notification Area -->
-    <div id="notification" class="notification" style="display: none;"></div>
+    <div id="notification" class="notification" aria-live="polite" style="display: none;"></div>
+    <div id="no-ratings-message" class="no-data" aria-live="polite" style="display: none;"></div>
 
     <!-- Loading Spinner -->
-    <div id="loading-spinner" class="spinner" style="display: none;">
+    <div id="loading-spinner" class="spinner" style="display: none;" aria-label="Loading">
         <div class="spinner-circle"></div>
     </div>
 
@@ -20,69 +21,87 @@
     <div id="fetch-url" data-url="{% url 'tracker:fetch_user_rating_history' username=request.user.username %}" style="display: none;"></div>
 
     <!-- Error Display -->
-    <div id="error-message" class="error-message" style="display: none;"></div>
+    <div id="error-message" class="error-message" aria-live="assertive" style="display: none;"></div>
     {% if message %}
         <div class="error-message">
             <p>{{ message }}</p>
         </div>
     {% endif %}
 
+    <div id="status-message" class="no-data" style="display: block;">
+        <p id="status-text">Enter two distinct valid usernames</p>
+    </div>
+
     <!-- Form to compare users -->
-    <div class="container form-wrapper">
-        <form id="compare-form" class="auth-form" method="POST">
+    <section class="container form-wrapper">
+        <form id="compare-form" class="auth-form" method="POST" novalidate>
             {% csrf_token %}
             <div class="form-field">
-                <label for="user1_username">Your Username:</label>
-                <input type="text" id="user1_username" name="user1_username" value="{{ request.user.username }}" required list="username-suggestions">
+                <label for="user1_username">User 1:</label>
+                <input type="text"
+                       id="user1_username"
+                       name="user1_username"
+                       placeholder="Enter username"
+                       value="{{ request.user.username }}"
+                       required
+                       list="username-suggestions"
+                       aria-describedby="user1-error">
                 <datalist id="username-suggestions"></datalist>
+                <span id="user1-error" class="error-text" role="alert" style="display: none;"></span>
             </div>
             <div class="form-field">
-                <label for="user2_username">Compare with:</label>
-                <input type="text" id="user2_username" name="user2_username" placeholder="Enter username" required list="username-suggestions">
+                <label for="user2_username">User 2:</label>
+                <input type="text"
+                       id="user2_username"
+                       name="user2_username"
+                       placeholder="Enter username"
+                       required
+                       list="username-suggestions"
+                       aria-describedby="user2-error">
+                <span id="user2-error" class="error-text" role="alert" style="display: none;"></span>
             </div>
             <div class="form-field form-buttons">
-                <button type="submit" id="compare-button" class="auth-button" disabled>Compare</button>
-                <button type="button" id="refresh-button" class="auth-button">Refresh Data</button>
+                <button type="submit" id="compare-button" class="auth-button" disabled title="Enter two distinct valid usernames to compare" aria-label="Compare user statistics">Compare</button>
+                <button type="button" id="refresh-button" class="auth-button" aria-label="Refresh user data">Refresh Data</button>
+                <button type="button" id="reset-button" class="auth-button" aria-label="Reset form and clear comparison">Reset</button>
             </div>
         </form>
-        <div id="no-rating-message" class="no-data" style="display: none;">
-            <p>You don't have any ratings yet. Create accounts on these platforms to start tracking:</p>
-            <ul>
-                <li><a href="https://leetcode.com/" target="_blank">LeetCode</a></li>
-                <li><a href="https://codeforces.com/" target="_blank">Codeforces</a></li>
-                <li><a href="https://www.codechef.com/" target="_blank">CodeChef</a></li>
-            </ul>
-        </div>
-    </div>
+    </section>
 
-    <!-- Stats Container (Initially Hidden) -->
-    <div id="stats-container" style="display: none;">
+    <!-- Stats Container -->
+    <div id="stats-container" role="region" aria-label="User Statistics Comparison" style="display: none;">
         <div id="user1-stats">
-            <h3 id="user1-username">{{ request.user.username }}</h3>
-            <p>Codeforces Rating: <span id="codeforces-rating" class="stat-value">{{ codeforces_rating|default:'N/A' }}</span></p>
-            <p>LeetCode Solved: <span id="leetcode-solved" class="stat-value">{{ leetcode_solved|default:'0' }}</span></p>
-            <p>CodeChef Rating: <span id="codechef-rating" class="stat-value">{{ codechef_rating|default:'N/A' }}</span></p>
+            <h3 id="user1-username"></h3>
+            <p>Codeforces Rating: <span id="codeforces-rating" class="stat-value">N/A</span></p>
+            <p>LeetCode Solved: <span id="leetcode-solved" class="stat-value">0</span></p>
+            <p>LeetCode Contests: <span id="leetcode-contests" class="stat-value">0</span></p>
+            <p>LeetCode Rating: <span id="leetcode-rating" class="stat-value">N/A</span></p>
+            <p>CodeChef Rating: <span id="codechef-rating" class="stat-value">N/A</span></p>
+            <p>Data Status: <span id="user1-status" class="stat-value">N/A</span></p>
         </div>
-        <p id="no-ratings-message" class="no-data" style="display: none;">No rating data available for {{ request.user.username }}.</p>
         <div class="compare-stat" id="compare-section" style="display: none;">
-            <h3 id="compare-username">...</h3>
+            <h3 id="compare-user1-username">...</h3>
             <p>Codeforces Rating: <span id="compare-codeforces-rating" class="stat-value">N/A</span></p>
             <p>LeetCode Solved: <span id="compare-leetcode-solved" class="stat-value">0</span></p>
+            <p>LeetCode Contests: <span id="compare-leetcode-contests" class="stat-value">0</span></p>
+            <p>LeetCode Rating: <span id="compare-leetcode-rating" class="stat-value">N/A</span></p>
             <p>CodeChef Rating: <span id="compare-codechef-rating" class="stat-value">N/A</span></p>
+            <p>Data Status: <span id="compare-status" class="stat-value">N/A</span></p>
         </div>
     </div>
 
-    <!-- Chart Container (Initially Hidden) -->
+    <!-- Chart Container -->
     <div id="chart-container" style="display: none;">
         <canvas id="ratingChart" aria-label="Performance trend chart"></canvas>
-        <p id="no-data-message" class="no-data" style="display: none;">No performance data available to display.</p>
+        <p id="no-data-message-chart" class="no-data" style="display: none;">No performance data available to display.</p>
+        <div id="chart-details" aria-live="polite" style="display: none;"></div>
         <div class="chart-buttons">
-            <button id="zoom-to-fit" class="chart-button" style="display: none;">Zoom to Fit</button>
-            <button id="reset-zoom" class="chart-button" style="display: none;">Reset Zoom</button>
+            <button id="zoom-to-fit" class="chart-button" style="display: none;" aria-label="Zoom chart to fit all data">Zoom to Fit</button>
+            <button id="reset-zoom" class="chart-button" style="display: none;" aria-label="Reset chart zoom to default">Reset Zoom</button>
         </div>
     </div>
 
-    <!-- History Section (Initially Hidden) -->
+    <!-- History Section -->
     <div id="history-section" style="display: none;">
         <h3>Contest History</h3>
         <div class="history-container">
@@ -99,21 +118,30 @@
                         <th>Date</th>
                     </tr>
                 </thead>
-                <tbody id="history-body"></tbody>
+                <tbody id="history-body">
+                    <tr id="no-history-row" style="display: none;">
+                        <td colspan="8">No contest history available.</td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="{% static 'js/chart.umd.min.js' %}"></script>
-    <script src="{% static 'js/moment.min.js' %}"></script>
-    <script src="{% static 'js/chartjs-adapter-moment.min.js' %}"></script>
-    <script src="{% static 'js/chartjs-plugin-zoom.min.js' %}"></script>
-    <script src="{% static 'js/compare/uiUtils.js' %}"></script>
-    <script src="{% static 'js/compare/websocket.js' %}"></script>
-    <script src="{% static 'js/compare/statsUtils.js' %}"></script>
-    <script src="{% static 'js/compare/chartUtils.js' %}"></script>
-    <script src="{% static 'js/compare/main.js' %}"></script>
-    <link rel="stylesheet" href="{% static 'css/compare.css' %}">
+    <script src="{% static 'js/Node/chart.umd.min.js' %}"></script>
+    <script src="{% static 'js/Node/moment.min.js' %}"></script>
+    <script src="{% static 'js/Node/chartjs-adapter-moment.min.js' %}"></script>
+    <script src="{% static 'js/Node/chartjs-plugin-zoom.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+    <script type="module" src="{% static 'js/compare/uiUtils.js' %}"></script>
+    <script type="module" src="{% static 'js/common/websocket.js' %}"></script>
+    <script type="module" src="{% static 'js/common/statsUtils.js' %}"></script>
+    <script type="module" src="{% static 'js/common/chartUtils.js' %}"></script>
+    <script type="module" src="{% static 'js/compare/main.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static 'css/compare/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/stats.css' %}">
 </div>
 {% endblock %}

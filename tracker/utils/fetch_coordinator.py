@@ -1,19 +1,17 @@
+# fetch_coordinator.py
 from asgiref.sync import sync_to_async
 from tracker.models import UserStats
 from .async_fetchers import fetch_and_store_rating_history_async
 from .sync_fetchers import fetch_and_store_rating_history
 
-
 async def fetch_and_store_all(username):
     """Fetch and store all user data (stats and history) asynchronously."""
     print(f"Fetching all data for {username}")
 
-    user = await sync_to_async(UserStats.objects(username=username).first)()
+    user = await sync_to_async(UserStats.objects.filter(username=username).first)()
     if not user:
-        user = await sync_to_async(UserStats.objects(username=username).first)()  # type: ignore[call-arg]
-
-        # Suppress linter warnings for save calls
-        await sync_to_async(user.save)()  # type: ignore[call-arg]
+        user = UserStats(username=username)
+        await sync_to_async(user.save)()
 
     try:
         history, lc_solved = await fetch_and_store_rating_history_async(username)

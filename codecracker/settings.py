@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'tracker',
+    'django_ratelimit',
 ]
 
 # ... (rest of your settings.py remains unchanged)

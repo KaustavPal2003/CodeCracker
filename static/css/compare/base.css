@@ -1,0 +1,32 @@
+/* Leverage variables from base.css */
+.performance-container {
+    max-width: 1200px;
+    width: 90%;
+    margin: 2rem auto;
+    padding: 2rem;
+    background: var(--container-bg);
+    border: 2px solid var(--secondary-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    transition: transform 0.2s ease, background-color 0.3s;
+}
+
+.performance-container:hover {
+    transform: translateY(-5px);
+}
+
+/* Heading */
+h2 {
+    font-size: 2rem;
+    color: var(--secondary-color);
+    text-align: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--secondary-color);
+}
+
+h3 {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    margin: 15px 0;
+}

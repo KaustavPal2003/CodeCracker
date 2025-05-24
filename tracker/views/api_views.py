@@ -7,6 +7,16 @@ from tracker.utils.contest_tracker import fetch_all_async
 from tracker.utils.codeforces import fetch_codeforces_rating_history
 from tracker.utils.selenium_scraper import fetch_codechef_contest_history_selenium
 
+def get_suggestions(request):
+    query = request.GET.get('q', '').strip()
+    if not query:
+        return JsonResponse({'suggestions': []})
+
+    # Fetch usernames that match the query
+    suggestions = UserStats.objects(username__icontains=query).only('username')[:10]
+    usernames = [user.username for user in suggestions]
+    return JsonResponse({'suggestions': usernames})
+
 @login_required
 def fetch_all_contest_history_view(username):
     try:

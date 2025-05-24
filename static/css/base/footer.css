@@ -1,0 +1,9 @@
+footer {
+    text-align: center;
+    padding: 1rem;
+    background: var(--nav-bg);
+    color: var(--nav-text);
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}

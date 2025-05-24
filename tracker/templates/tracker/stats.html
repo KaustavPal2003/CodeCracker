@@ -1,76 +1,85 @@
 {% extends "tracker/base.html" %}
 {% load static %}
 
-{% block title %}Stats - {{ username }}{% endblock %}
+{% block title %}My Stats{% endblock %}
 
 {% block content %}
-    <div class="performance-container">
-        <h2>📊 Stats for {{ username }}</h2>
+<div class="performance-container" role="main">
+    <h2>📊 My Stats</h2>
 
-        <!-- Notification Area -->
-        <div id="notification" class="notification" style="display: none;">
-            <p>Data updated!</p>
+    <!-- Notification Area -->
+    <div id="notification" class="notification" aria-live="polite" style="display: none;"></div>
+    <div id="no-ratings-message" class="no-data" aria-live="polite" style="display: none;"></div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="spinner" style="display: none;" aria-label="Loading">
+        <div class="spinner-circle"></div>
+    </div>
+
+    <!-- Hidden Data Elements -->
+    <div id="username-data" data-username="{{ request.user.username }}" style="display: none;"></div>
+    <div id="fetch-url" data-url="{% url 'tracker:fetch_user_rating_history' username=request.user.username %}" style="display: none;"></div>
+
+    <!-- Error Display -->
+    <div id="error-message" class="error-message" aria-live="assertive" style="display: none;"></div>
+    {% if message %}
+        <div class="error-message">
+            <p>{{ message }}</p>
         </div>
+    {% endif %}
 
-        <!-- Hidden elements to pass data to JavaScript -->
-        <div id="username-data" data-username="{{ username }}" style="display: none;"></div>
-        <div id="fetch-url" data-url="{% url 'tracker:fetch_user_rating_history' username=username %}" style="display: none;"></div>
+    <div id="status-message" class="no-data" style="display: block;">
+        <p id="status-text">Loading your stats...</p>
+    </div>
 
-        <!-- Error Display -->
-        {% if message %}
-            <div class="error-message">
-                <p>{{ message }}</p>
-            </div>
-        {% endif %}
-
-        <!-- Stats Display -->
-        <div id="stats-container">
-            <p>Codeforces Rating: {{ codeforces_rating }}</p>
-            <p>LeetCode Solved: {{ leetcode_solved }}</p>
-            <p>CodeChef Rating: {{ codechef_rating }}</p>
-        </div>
-
-        <!-- Rating History -->
-        <div id="history-section">
-            {% if rating_history %}
-                <h3>Contest History</h3>
-                <div class="history-container">
-                    <table class="stats-table" id="history-table">
-                        <thead>
-                            <tr>
-                                <th>Platform</th>
-                                <th>Contest</th>
-                                <th>Rank</th>
-                                <th>Old Rating</th>
-                                <th>New Rating</th>
-                                <th>Change</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-body">
-                            {% for entry in rating_history %}
-                                <tr>
-                                    <td>{{ entry.platform }}</td>
-                                    <td>{{ entry.contest }}</td>
-                                    <td>{{ entry.rank }}</td>
-                                    <td>{{ entry.old_rating }}</td>
-                                    <td>{{ entry.new_rating }}</td>
-                                    <td>{{ entry.change }}</td>
-                                    <td>{{ entry.date|slice:":10" }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p id="no-history" class="no-data">No contest history available.</p>
-            {% endif %}
+    <!-- Stats Container -->
+    <div id="stats-container" role="region" aria-label="User Statistics" style="display: none;">
+        <div id="user1-stats">
+            <h3 id="user1-username">{{ request.user.username }}</h3>
+            <p>Codeforces Rating: <span id="codeforces-rating" class="stat-value">N/A</span></p>
+            <p>LeetCode Solved: <span id="leetcode-solved" class="stat-value">0</span></p>
+            <p>LeetCode Contests: <span id="leetcode-contests" class="stat-value">0</span></p>
+            <p>LeetCode Rating: <span id="leetcode-rating" class="stat-value">N/A</span></p>
+            <p>CodeChef Rating: <span id="codechef-rating" class="stat-value">N/A</span></p>
+            <p>Data Status: <span id="user1-status" class="stat-value">N/A</span></p>
         </div>
     </div>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="{% static 'css/compare.css' %}">
+    <!-- History Section -->
+    {% if request.user.is_authenticated %}
+    <div id="history-section" style="display: none;">
+    <h3>Contest History</h3>
+    <div class="history-container">
+        <table class="stats-table" id="history-table">
+            <thead>
+                <tr>
+                    <th>Platform</th>
+                    <th>Contest</th>
+                    <th>Rank</th>
+                    <th>Old Rating</th>
+                    <th>New Rating</th>
+                    <th>Change</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="history-body">
+                <tr id="no-history-row" style="display: none;">
+                    <td colspan="7">No contest history available.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+    {% endif %}
 
-    <!-- JavaScript -->
-    <script src="{% static 'js/stats.js' %}"></script>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+    <script type="module" src="{% static 'js/stats.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static 'css/compare/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/stats.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/responsive.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms/auth-elements.css' %}">
+</div>
 {% endblock %}

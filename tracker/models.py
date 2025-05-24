@@ -1,6 +1,6 @@
+# E:\Best_project\codecracker\tracker\models.py
 from mongoengine import Document, StringField, IntField, ListField, EmbeddedDocument, EmbeddedDocumentField, DateTimeField
-
-from mongoengine import EmbeddedDocument, StringField, IntField, DateTimeField
+from datetime import datetime
 
 class RatingHistory(EmbeddedDocument):
     platform = StringField(required=True)
@@ -28,5 +28,12 @@ class UserStats(Document):
     leetcode_solved = IntField(default=0)
     codechef_rating = IntField(default=0)
     rating_history = ListField(EmbeddedDocumentField(RatingHistory))
-    
+    last_updated = DateTimeField(default=datetime.utcnow)
+
     meta = {'collection': 'user_stats'}
+
+    def save(self, *args, **kwargs):
+        # Ensure last_updated is set before saving
+        if not self.last_updated:
+            self.last_updated = datetime.utcnow()
+        super().save(*args, **kwargs)

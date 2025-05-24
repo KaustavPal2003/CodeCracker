@@ -1,41 +1,41 @@
 {% extends "tracker/base.html" %}
 {% load static %}
 
-{% block title %}Performance - {{ username }}{% endblock %}
+{% block title %}My Performance{% endblock %}
 
 {% block content %}
-<div class="performance-container" id="performance-container">
-    <h2>📈 Performance Trend for {{ username }}</h2>
+<div class="performance-container" role="main">
+    <h2>📊 My Performance</h2>
 
     <!-- Notification Area -->
-    <div id="notification" class="notification" role="alert" style="display: none;">
-        <p>Data updated!</p>
-    </div>
+    <div id="notification" class="notification" aria-live="polite" style="display: none;"></div>
 
     <!-- Loading Spinner -->
-    <div id="loading-spinner" class="spinner" style="display: none;">
+    <div id="loading-spinner" class="spinner" style="display: none;" aria-label="Loading">
         <div class="spinner-circle"></div>
     </div>
 
-    <!-- Hidden elements to pass data to JavaScript -->
-    <div id="username-data" data-username="{{ username }}" style="display: none;"></div>
-    <div id="fetch-url" data-url="{% url 'tracker:fetch_user_rating_history' username=username %}" style="display: none;"></div>
+    <!-- Hidden Data Elements -->
+    <div id="username-data" data-username="{{ request.user.username }}" style="display: none;"></div>
+    <div id="fetch-url" data-url="{% url 'tracker:fetch_user_rating_history' username=request.user.username %}" style="display: none;"></div>
 
     <!-- Error Display -->
+    <div id="error-message" class="error-message" aria-live="assertive" style="display: none;"></div>
     {% if message %}
-    <div class="error-message">
-        <p>{{ message }}</p>
-    </div>
+        <div class="error-message">
+            <p>{{ message }}</p>
+        </div>
     {% endif %}
 
     <!-- Chart Container -->
     <div id="chart-container">
-        <canvas id="ratingChart" aria-label="Performance trend chart for {{ username }}"></canvas>
-        <p id="no-data-message" class="no-data" style="display: none;">No performance data available to display.</p>
+        <canvas id="ratingChart" aria-label="Performance trend chart"></canvas>
+        <p id="no-data-message-chart" class="no-data" style="display: none;">No performance data available to display.</p>
         <div class="chart-buttons">
             <button id="zoom-to-fit" class="chart-button" style="display: none;">Zoom to Fit</button>
             <button id="reset-zoom" class="chart-button" style="display: none;">Reset Zoom</button>
         </div>
+        <div id="chart-details" class="chart-details" style="display: none;" aria-live="polite"></div>
     </div>
 
     <!-- History Table -->
@@ -57,20 +57,20 @@
         </div>
     </div>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="{% static 'css/compare.css' %}">
-
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.30.1/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="{% static 'js/Node/chart.umd.min.js' %}"></script>
+    <script src="{% static 'js/Node/moment.min.js' %}"></script>
+    <script src="{% static 'js/Node/chartjs-adapter-moment.min.js' %}"></script>
+    <script src="{% static 'js/Node/chartjs-plugin-zoom.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+    <script type="module" src="{% static 'js/common/websocket.js' %}"></script>
+    <script type="module" src="{% static 'js/common/chartUtils.js' %}"></script>
+    <script type="module" src="{% static 'js/performance/main.js' %}"></script>
+    <script type="module" src="{% static 'js/common/statsUtils.js' %}"></script>
 
-
-    <script src="{% static 'js/performance/utils.js' %}"></script>
-    <script src="{% static 'js/performance/chartUtils.js' %}"></script>
-    <script src="{% static 'js/performance/websocket.js' %}"></script>
-    <script src="{% static 'js/performance/historyUtils.js' %}"></script>
-    <script src="{% static 'js/performance/index.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/compare/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/stats.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/responsive.css' %}">
 </div>
 {% endblock %}
