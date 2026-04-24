@@ -104,7 +104,6 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 WHITENOISE_ROOT = BASE_DIR / "static"
-WHITENOISE_ROOT = BASE_DIR / 'static'
 # Templates
 TEMPLATES = [
     {
