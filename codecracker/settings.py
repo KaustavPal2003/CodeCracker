@@ -96,10 +96,7 @@ MIDDLEWARE = [
     'csp.middleware.CSPMiddleware',
 ]
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['map']
-WHITENOISE_MANIFEST_STRICT = False
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
