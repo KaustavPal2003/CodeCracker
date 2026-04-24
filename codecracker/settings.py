@@ -102,7 +102,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-STATIC_ROOT = BASE_DIR / "staticfiles"  # For collectstatic in production
+STATIC_ROOT = BASE_DIR / "staticfiles"
+WHITENOISE_ROOT = BASE_DIR / "static"
 WHITENOISE_ROOT = BASE_DIR / 'static'
 # Templates
 TEMPLATES = [
