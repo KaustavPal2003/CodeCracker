@@ -1,0 +1,34 @@
+/* static/css/auth-dark-theme.css */
+body.dark-theme .auth-container {
+    border-color: var(--primary-color);
+}
+
+body.dark-theme .auth-form input[type="text"],
+body.dark-theme .auth-form input[type="password"],
+body.dark-theme .auth-form input[type="number"] {
+    background-color: var(--container-bg);
+    border-color: var(--shadow-color);
+}
+
+body.dark-theme .auth-form input[type="text"]:focus,
+body.dark-theme .auth-form input[type="password"]:focus,
+body.dark-theme .auth-form input[type="number"]:focus {
+    border-color: var(--secondary-color);
+}
+
+body.dark-theme .auth-link {
+    color: var(--text-color);
+}
+
+body.dark-theme .auth-link a {
+    color: #87cefa;
+}
+
+body.dark-theme .auth-link a:hover {
+    color: #ffa07a;
+    background-color: rgba(255, 160, 122, 0.2);
+}
+
+body.dark-theme .auth-form .errorlist {
+    color: var(--accent-color);
+}

@@ -1,0 +1,142 @@
+<!-- tracker/templates/tracker/dashboard.html -->
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+  <!-- Hero banner -->
+  <div class="dashboard-hero">
+    <h2>
+      {% if request.user.is_authenticated %}
+        Hey, {{ request.user.username }} 👋
+      {% else %}
+        Track your coding journey 🚀
+      {% endif %}
+    </h2>
+    <p>Unified ratings from Codeforces, LeetCode, CodeChef &amp; AtCoder — in one place.</p>
+
+    {% if request.user.is_authenticated and user_stats %}
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-label">Codeforces</div>
+        <div class="hero-stat-value">{{ user_stats.codeforces_rating|default:"—" }}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">LeetCode</div>
+        <div class="hero-stat-value">{{ user_stats.leetcode_solved|default:"0" }} AC</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">CodeChef</div>
+        <div class="hero-stat-value">{{ user_stats.codechef_rating|default:"—" }}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">AtCoder</div>
+        <div class="hero-stat-value gold">{{ user_stats.atcoder_rating|default:"—" }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick access grid -->
+  <p class="section-label">Quick Access</p>
+  <div class="dashboard-grid">
+
+    {% if request.user.is_authenticated %}
+
+    <a href="{% url 'tracker:fetch_user_stats' request.user.username %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">📊</span>
+      <h3>My Stats</h3>
+      <p>Live ratings &amp; contest history across all platforms</p>
+      {% if user_stats and user_stats.codeforces_rating %}
+        <span class="badge badge-indigo card-badge">CF {{ user_stats.codeforces_rating }}</span>
+      {% endif %}
+    </a>
+
+    <a href="{% url 'tracker:user_performance' request.user.username %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">📈</span>
+      <h3>Performance</h3>
+      <p>Rating history charts with per-platform toggle</p>
+    </a>
+
+    <a href="{% url 'tracker:compare_stats' %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">🆚</span>
+      <h3>Compare</h3>
+      <p>Head-to-head against any user</p>
+    </a>
+
+    <a href="{% url 'tracker:leaderboard' %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">🏆</span>
+      <h3>Leaderboard</h3>
+      <p>Top performers across the community</p>
+    </a>
+
+    <a href="{% url 'tracker:profile' %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">👤</span>
+      <h3>Profile</h3>
+      <p>Edit handles, bio &amp; avatar</p>
+    </a>
+
+    <a href="{% url 'tracker:export_csv' request.user.username %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">📥</span>
+      <h3>Export Stats</h3>
+      <p>Download your data as CSV or PDF</p>
+      <span class="badge badge-green card-badge">CSV &amp; PDF</span>
+    </a>
+
+    <a href="{% url 'tracker:add_user' %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">➕</span>
+      <h3>Add User</h3>
+      <p>Register a new tracker entry</p>
+    </a>
+
+    {# Admin panel — only shown to admins (resolved via JS with localStorage role) #}
+    <a href="{% url 'tracker:admin_panel' %}" class="dashboard-card admin-card" id="admin-card"
+       style="display:none">
+      <span class="dashboard-card-emoji">⚙️</span>
+      <h3>Admin Panel</h3>
+      <p>Manage users and roles</p>
+      <span class="badge badge-gold card-badge">Admin</span>
+    </a>
+
+    {% else %}
+
+    <a href="{% url 'tracker:leaderboard' %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">🏆</span>
+      <h3>Leaderboard</h3>
+      <p>See top performers</p>
+    </a>
+    <a href="{% url 'tracker:signup' %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">📝</span>
+      <h3>Sign Up</h3>
+      <p>Create your free account</p>
+    </a>
+    <a href="{% url 'tracker:login' %}" class="dashboard-card">
+      <span class="dashboard-card-emoji">🔑</span>
+      <h3>Login</h3>
+      <p>Access your dashboard</p>
+    </a>
+
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Show admin card if stored role is admin
+  try {
+    if (localStorage.getItem('cc_role') === 'admin') {
+      const card = document.getElementById('admin-card');
+      if (card) card.style.display = '';
+    }
+  } catch(e) {}
+</script>
+{% endblock %}

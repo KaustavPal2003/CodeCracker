@@ -1,0 +1,68 @@
+<!-- tracker/templates/tracker/leaderboard.html -->
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Leaderboard{% endblock %}
+
+{% block content %}
+{# Pass logged-in username to JS safely #}
+{% if request.user.is_authenticated %}
+<div id="current-username" data-username="{{ request.user.username|escapejs }}" style="display:none;"></div>
+{% endif %}
+
+<div class="performance-container">
+    <h2>🏆 Leaderboard</h2>
+
+    <div id="notification" class="notification" role="alert" style="display:none;"></div>
+    <div id="loading-spinner" class="spinner" style="display:none;">
+        <div class="spinner-circle"></div>
+    </div>
+
+    {% if message %}
+    <div class="error-message"><p>{{ message }}</p></div>
+    {% endif %}
+
+    <div class="leaderboard-controls">
+        <label for="leaderboard-search" class="sr-only">Search by username</label>
+        <input type="text" id="leaderboard-search"
+               placeholder="Search by username…" aria-label="Search leaderboard">
+    </div>
+
+    <div id="history-section">
+        {% if leaderboard_data %}
+        <div class="history-container">
+            <table class="stats-table" id="leaderboard-table" role="grid">
+                <thead>
+                    <tr>
+                        <th data-sort="rank"              scope="col" tabindex="0">Rank</th>
+                        <th data-sort="username"          scope="col" tabindex="0">Username</th>
+                        <th data-sort="codeforces_rating" scope="col" tabindex="0">Codeforces</th>
+                        <th data-sort="leetcode_solved"   scope="col" tabindex="0">LeetCode AC</th>
+                        <th data-sort="codechef_rating"   scope="col" tabindex="0">CodeChef</th>
+                        <th data-sort="atcoder_rating"    scope="col" tabindex="0">AtCoder</th>
+                        <th data-sort="total_score"       scope="col" tabindex="0">Total Score</th>
+                    </tr>
+                </thead>
+                {# tbody is populated entirely by leaderboard.js via updateLeaderboard() #}
+                <tbody id="leaderboard-body"></tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <button id="prev-page" class="auth-button" disabled>Previous</button>
+            <span id="page-info" aria-live="polite">Page 1</span>
+            <button id="next-page" class="auth-button">Next</button>
+        </div>
+        {% else %}
+        <p class="no-data">No leaderboard data available yet. Add users and fetch their stats first.</p>
+        {% endif %}
+    </div>
+</div>
+
+<link rel="stylesheet" href="{% static 'css/compare/base.css' %}">
+<link rel="stylesheet" href="{% static 'css/compare/notifications.css' %}">
+<link rel="stylesheet" href="{% static 'css/compare/stats.css' %}">
+<link rel="stylesheet" href="{% static 'css/compare/responsive.css' %}">
+
+<script id="leaderboard-data" type="application/json">{{ leaderboard_data_json|safe }}</script>
+<script src="{% static 'js/leaderboard.js' %}"></script>
+{% endblock %}

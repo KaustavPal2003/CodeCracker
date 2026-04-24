@@ -1,0 +1,218 @@
+<!-- tracker/templates/tracker/admin_panel.html -->
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin/admin-panel.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+
+  <div class="admin-header">
+    <h2>⚙️ Admin Panel</h2>
+    <span class="admin-header-meta">{{ total }} registered user{{ total|pluralize }}</span>
+  </div>
+
+  <!-- Summary pills -->
+  <div class="admin-summary">
+    {% for role in roles %}
+    <div class="admin-pill">
+      <div class="admin-pill-label">{{ role|capfirst }}s</div>
+      <div class="admin-pill-value" id="count-{{ role }}">—</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Toolbar -->
+  <div class="admin-toolbar">
+    <input type="text" class="admin-search" id="admin-search"
+           placeholder="🔍 Search by username…" aria-label="Search users">
+    <a href="{% url 'tracker:add_user' %}" class="btn btn-primary btn-sm">➕ Add User</a>
+  </div>
+
+  <!-- Users table -->
+  <div class="admin-table-wrap">
+    <table class="admin-table" id="admin-table" aria-label="User management table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Role</th>
+          <th>CF Rating</th>
+          <th>LC Solved</th>
+          <th>CC Rating</th>
+          <th>AC Rating</th>
+          <th>Leaderboard</th>
+          <th>Last Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr data-username="{{ row.username }}" data-role="{{ row.role }}">
+          <td style="color:var(--text-muted);font-size:.8rem">{{ forloop.counter }}</td>
+          <td>
+            <strong>{{ row.username }}</strong>
+            <br>
+            <a href="{% url 'tracker:fetch_user_stats' row.username %}"
+               style="font-size:.75rem;color:var(--text-muted)">
+              View stats →
+            </a>
+          </td>
+          <td>
+            <span class="role-badge rb-{{ row.role }}">{{ row.role }}</span>
+          </td>
+          <td>{{ row.codeforces_rating|default:"—" }}</td>
+          <td>{{ row.leetcode_solved|default:"0" }}</td>
+          <td>{{ row.codechef_rating|default:"—" }}</td>
+          <td>{{ row.atcoder_rating|default:"—" }}</td>
+          <td>
+            {% if row.show_on_leaderboard %}
+              <span style="color:var(--green-500)">✓</span>
+            {% else %}
+              <span style="color:var(--text-muted)">✗</span>
+            {% endif %}
+          </td>
+          <td style="font-size:.8rem;color:var(--text-muted)">
+            {% if row.last_updated %}
+              {{ row.last_updated|date:"Y-m-d" }}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+              <!-- Role picker -->
+              <select class="role-select role-change-select"
+                      data-username="{{ row.username }}"
+                      aria-label="Change role for {{ row.username }}">
+                {% for role in roles %}
+                <option value="{{ role }}"
+                        {% if row.role == role %}selected{% endif %}>
+                  {{ role|capfirst }}
+                </option>
+                {% endfor %}
+              </select>
+              <button class="admin-action-btn btn-set-role"
+                      data-username="{{ row.username }}"
+                      aria-label="Save role for {{ row.username }}">
+                Save
+              </button>
+              <button class="admin-action-btn btn-del-user"
+                      data-username="{{ row.username }}"
+                      aria-label="Delete {{ row.username }}">
+                🗑 Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="10" class="no-data">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div id="admin-toast" role="alert" aria-live="assertive"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+// ── Toast helper ──────────────────────────────────
+function toast(msg, type = 'ok') {
+  const el = document.getElementById('admin-toast');
+  el.textContent = msg;
+  el.className = 'show' + (type === 'error' ? ' error' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3000);
+}
+
+// ── Count roles ───────────────────────────────────
+(function updateCounts() {
+  const counts = {};
+  document.querySelectorAll('[data-role]').forEach(r => {
+    const role = r.dataset.role;
+    counts[role] = (counts[role] || 0) + 1;
+  });
+  Object.entries(counts).forEach(([role, n]) => {
+    const el = document.getElementById('count-' + role);
+    if (el) el.textContent = n;
+  });
+})();
+
+// ── Search filter ─────────────────────────────────
+document.getElementById('admin-search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#admin-table tbody tr').forEach(row => {
+    const username = (row.dataset.username || '').toLowerCase();
+    row.classList.toggle('hidden-row', q && !username.includes(q));
+  });
+});
+
+// ── Set role ──────────────────────────────────────
+document.querySelectorAll('.btn-set-role').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const username = btn.dataset.username;
+    const row      = btn.closest('tr');
+    const select   = row.querySelector('.role-change-select');
+    const role     = select.value;
+
+    try {
+      const r = await fetch("{% url 'tracker:set_user_role' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF,
+        },
+        body: JSON.stringify({ username, role }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        row.dataset.role = role;
+        row.querySelector('.role-badge').textContent = role;
+        row.querySelector('.role-badge').className = `role-badge rb-${role}`;
+        toast(`✅ ${username} is now ${role}`);
+      } else {
+        toast(data.error || 'Failed to update role', 'error');
+      }
+    } catch(e) {
+      toast('Network error', 'error');
+    }
+  });
+});
+
+// ── Delete user ───────────────────────────────────
+document.querySelectorAll('.btn-del-user').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const username = btn.dataset.username;
+    if (!confirm(`Delete "${username}"? This cannot be undone.`)) return;
+
+    try {
+      const r = await fetch("{% url 'tracker:delete_user' %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': CSRF,
+        },
+        body: JSON.stringify({ username }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        btn.closest('tr').remove();
+        toast(`🗑 ${username} deleted`);
+      } else {
+        toast(data.error || 'Delete failed', 'error');
+      }
+    } catch(e) {
+      toast('Network error', 'error');
+    }
+  });
+});
+</script>
+{% endblock %}

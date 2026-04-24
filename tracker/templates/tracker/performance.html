@@ -1,0 +1,83 @@
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}My Performance{% endblock %}
+
+{% block extra_css %}
+{# ▼ ADD THIS LINE — platform toggle pill button styles #}
+<link rel="stylesheet" href="{% static 'css/base/platform-toggles.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="performance-container" role="main">
+    <h2>📊 My Performance</h2>
+
+    <!-- Notification Area -->
+    <div id="notification" class="notification" aria-live="polite" style="display: none;"></div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="spinner" style="display: none;" aria-label="Loading">
+        <div class="spinner-circle"></div>
+    </div>
+
+    <!-- Hidden Data Elements -->
+    <div id="username-data" data-username="{{ request.user.username }}" style="display: none;"></div>
+    <div id="fetch-url" data-url="{% url 'tracker:fetch_user_rating_history' username=request.user.username %}" style="display: none;"></div>
+
+    <!-- Error Display -->
+    <div id="error-message" class="error-message" aria-live="assertive" style="display: none;"></div>
+    {% if message %}
+        <div class="error-message">
+            <p>{{ message }}</p>
+        </div>
+    {% endif %}
+
+    <!-- Chart Container -->
+    <div id="chart-container">
+        {# ▼ ADD THIS DIV — toggle buttons appear here after chart loads #}
+        <div class="chart-controls">
+            <div id="platform-toggles"></div>
+            <div class="chart-zoom-btns">
+                <button id="zoom-to-fit" class="chart-button" style="display: none;">Zoom to Fit</button>
+                <button id="reset-zoom" class="chart-button" style="display: none;">Reset Zoom</button>
+            </div>
+        </div>
+        {# ▲ everything above is new; canvas and no-data below are unchanged #}
+
+        <canvas id="ratingChart" aria-label="Performance trend chart"></canvas>
+        <p id="no-data-message-chart" class="no-data" style="display: none;">No performance data available to display.</p>
+    </div>
+
+    <!-- History Table -->
+    <div id="history-section">
+        <h3>Recent Contests</h3>
+        <div id="history-container" class="history-container">
+            <table id="history-table" class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Platform</th>
+                        <th>Contest</th>
+                        <th>Date</th>
+                        <th>Rating</th>
+                        <th>Rank</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Scripts (unchanged) -->
+    <script src="{% static 'js/chart.umd.min.js' %}"></script>
+    <script src="{% static 'js/moment.min.js' %}"></script>
+    <script src="{% static 'js/chartjs-adapter-moment.min.js' %}"></script>
+    <script src="{% static 'js/chartjs-plugin-zoom.min.js' %}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+    <script type="module" src="{% static 'js/performance/main.js' %}"></script>
+
+    <link rel="stylesheet" href="{% static 'css/compare/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/stats.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/responsive.css' %}">
+</div>
+{% endblock %}

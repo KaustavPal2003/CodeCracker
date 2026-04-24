@@ -1,0 +1,111 @@
+/* static/css/base/platform-toggles.css
+   Per-platform chart toggle pill buttons
+*/
+
+#platform-toggles {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.platform-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .38rem .9rem;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-xl);
+  font-family: var(--font-body);
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: .02em;
+}
+
+.platform-toggle-btn .pt-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pt-color, #6366f1);
+  flex-shrink: 0;
+  opacity: .4;
+  transition: opacity var(--transition);
+}
+
+/* Active state */
+.platform-toggle-btn.active {
+  background: color-mix(in srgb, var(--pt-color) 12%, transparent);
+  border-color: var(--pt-color);
+  color: var(--text);
+}
+.platform-toggle-btn.active .pt-dot {
+  opacity: 1;
+  box-shadow: 0 0 6px var(--pt-color);
+}
+
+.platform-toggle-btn:hover {
+  border-color: var(--pt-color);
+  color: var(--text);
+}
+
+/* Chart container */
+#chart-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-md);
+  position: relative;
+}
+
+#ratingChart {
+  width: 100% !important;
+  height: 420px !important;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.chart-zoom-btns {
+  display: flex;
+  gap: .5rem;
+}
+
+.chart-zoom-btns button {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .35rem .8rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.chart-zoom-btns button:hover {
+  background: var(--surface);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+#no-data-message-chart {
+  display: none;
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

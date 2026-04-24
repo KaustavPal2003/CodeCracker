@@ -1,0 +1,16 @@
+django>=4.2,<5.0
+daphne
+channels
+channels-redis
+mongoengine
+pymongo[srv]
+dnspython
+python-dotenv
+celery
+django-ratelimit
+django-csp
+whitenoise
+requests
+aiohttp
+beautifulsoup4
+asgiref

@@ -1,0 +1,69 @@
+/* static/css/auth-elements.css */
+.auth-form input[type="text"],
+.auth-form input[type="password"],
+.auth-form input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--shadow-color);
+    border-radius: 4px;
+    background-color: var(--container-bg);
+    color: var(--text-color);
+    font-size: 16px;
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.auth-form input[type="text"]:focus,
+.auth-form input[type="password"]:focus,
+.auth-form input[type="number"]:focus {
+    border-color: var(--secondary-color);
+    outline: none;
+}
+
+.auth-button {
+    background-color: var(--secondary-color);
+    color: var(--nav-text);
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.auth-button:hover {
+    background-color: var(--accent-color);
+    transform: translateY(-2px);
+}
+
+.auth-link {
+    text-align: center;
+    margin-top: 15px;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.auth-link a {
+    color: #FFFFFF;
+    text-decoration: underline;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.3s, background-color 0.3s;
+}
+
+.auth-link a:hover {
+    color: #ff4500;
+    background-color: rgba(255, 69, 0, 0.1);
+}
+
+.auth-form .errorlist {
+    list-style: none;
+    margin: 5px 0 0 0;
+    padding: 0;
+    color: var(--accent-color);
+    font-size: 14px;
+}
+
+.auth-form .errorlist li {
+    margin: 0;
+}

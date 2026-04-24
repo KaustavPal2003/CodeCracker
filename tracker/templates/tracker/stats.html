@@ -1,0 +1,85 @@
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Stats - {{ username }}{% endblock %}
+
+{% block content %}
+    <div class="performance-container">
+        <h2>📊 Stats for {{ username }}</h2>
+
+        <!-- Notification Area -->
+        <div id="notification" class="notification" style="display: none;">
+            <p>Data updated!</p>
+        </div>
+
+        <!-- Hidden elements to pass data to JavaScript -->
+        <div id="username-data" data-username="{{ username }}" style="display: none;"></div>
+        <div id="fetch-url" data-url="{% url 'tracker:fetch_user_rating_history' username=username %}" style="display: none;"></div>
+
+        <!-- Error Display -->
+        {% if message %}
+            <div class="error-message">
+                <p>{{ message }}</p>
+            </div>
+        {% endif %}
+
+        <!-- Stats Display -->
+        <div id="stats-container">
+            <p>Codeforces Rating: {{ codeforces_rating }}</p>
+            <p>LeetCode Solved: {{ leetcode_solved }}</p>
+            <p>LeetCode Contests: {{ leetcode_contests|default:"N/A" }}</p>
+            <p>LeetCode Rating: {{ leetcode_rating|default:"N/A" }}</p>
+            <p>CodeChef Rating: {{ codechef_rating }}</p>
+            <p>Data Status: {{ data_status|default:"Unknown" }}</p>
+        </div>
+
+        <!-- Rating History -->
+        <div id="history-section">
+            {% if rating_history %}
+                <h3>Contest History</h3>
+                <div class="history-container">
+                    <table class="stats-table" id="history-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Platform</th>
+                                <th>Contest</th>
+                                <th>Rank</th>
+                                <th>Old Rating</th>
+                                <th>New Rating</th>
+                                <th>Change</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            {% for entry in rating_history %}
+                                <tr>
+                                    <td>{{ username }}</td>
+                                    <td>{{ entry.platform }}</td>
+                                    <td>{{ entry.contest }}</td>
+                                    <td>{{ entry.rank }}</td>
+                                    <td>{{ entry.old_rating }}</td>
+                                    <td>{{ entry.new_rating }}</td>
+                                    <td>{{ entry.change }}</td>
+                                    <td>{{ entry.date|slice:":10" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p id="no-history" class="no-data">No contest history available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{% static 'css/compare/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/stats.css' %}">
+    <link rel="stylesheet" href="{% static 'css/compare/responsive.css' %}">
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="{% static 'js/stats.js' %}"></script>
+{% endblock %}

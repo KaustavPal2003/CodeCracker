@@ -1,0 +1,214 @@
+<!-- tracker/templates/tracker/profile.html -->
+{% extends "tracker/base.html" %}
+{% load static %}
+
+{% block title %}Profile · {{ profile.username }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="profile-page">
+
+  <!-- Hero header -->
+  <div class="profile-hero">
+    <div class="profile-avatar-wrap">
+      <div class="profile-avatar" id="avatar-preview"
+           style="background: {{ profile.avatar_color }}">
+        {{ initials }}
+      </div>
+    </div>
+    <div class="profile-hero-info">
+      <h2>{{ profile.username }}</h2>
+      <p>{% if profile.bio %}{{ profile.bio }}{% else %}No bio yet.{% endif %}</p>
+      <span class="profile-role-badge role-{{ profile.role }}">
+        {% if profile.role == 'admin' %}⚙️{% elif profile.role == 'moderator' %}🛡️{% else %}👤{% endif %}
+        {{ profile.role|capfirst }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Platform stats -->
+  {% if stats %}
+  <div class="profile-stats-row">
+    <div class="profile-stat-card">
+      <div class="pstat-icon">⚡</div>
+      <div class="pstat-label">Codeforces</div>
+      <div class="pstat-value">{{ stats.codeforces_rating|default:"—" }}</div>
+    </div>
+    <div class="profile-stat-card">
+      <div class="pstat-icon">🟡</div>
+      <div class="pstat-label">LeetCode AC</div>
+      <div class="pstat-value">{{ stats.leetcode_solved|default:"0" }}</div>
+    </div>
+    <div class="profile-stat-card">
+      <div class="pstat-icon">🍴</div>
+      <div class="pstat-label">CodeChef</div>
+      <div class="pstat-value">{{ stats.codechef_rating|default:"—" }}</div>
+    </div>
+    <div class="profile-stat-card">
+      <div class="pstat-icon">🌸</div>
+      <div class="pstat-label">AtCoder</div>
+      <div class="pstat-value">{{ stats.atcoder_rating|default:"—" }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Export row -->
+  {% if own_profile %}
+  <div class="export-row">
+    <a href="{% url 'tracker:export_csv' profile.username %}" class="btn btn-ghost btn-sm">
+      📄 Export CSV
+    </a>
+    <a href="{% url 'tracker:export_pdf' profile.username %}" class="btn btn-ghost btn-sm">
+      📑 Export PDF
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Edit form -->
+  {% if own_profile or is_admin %}
+  <div class="profile-form-card">
+    <h3>✏️ Edit Profile{% if not own_profile %} — {{ profile.username }}{% endif %}</h3>
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-grid">
+
+        <!-- Platform handles -->
+        <div class="pf-field">
+          <label for="cf">
+            <span class="platform-dot" style="background:#6366f1"></span>
+            Codeforces Handle
+          </label>
+          <input type="text" id="cf" name="codeforces_handle"
+                 placeholder="e.g. tourist"
+                 value="{{ profile.codeforces_handle }}" maxlength="50">
+          <span class="pf-hint">Leave blank to use account username</span>
+        </div>
+
+        <div class="pf-field">
+          <label for="lc">
+            <span class="platform-dot" style="background:#f59e0b"></span>
+            LeetCode Handle
+          </label>
+          <input type="text" id="lc" name="leetcode_handle"
+                 placeholder="e.g. uwi"
+                 value="{{ profile.leetcode_handle }}" maxlength="50">
+          <span class="pf-hint">Leave blank to use account username</span>
+        </div>
+
+        <div class="pf-field">
+          <label for="cc">
+            <span class="platform-dot" style="background:#10b981"></span>
+            CodeChef Handle
+          </label>
+          <input type="text" id="cc" name="codechef_handle"
+                 placeholder="e.g. gennady.korotkevich"
+                 value="{{ profile.codechef_handle }}" maxlength="50">
+          <span class="pf-hint">Leave blank to use account username</span>
+        </div>
+
+        <div class="pf-field">
+          <label for="ac">
+            <span class="platform-dot" style="background:#ec4899"></span>
+            AtCoder Handle
+          </label>
+          <input type="text" id="ac" name="atcoder_handle"
+                 placeholder="e.g. tourist"
+                 value="{{ profile.atcoder_handle }}" maxlength="50">
+          <span class="pf-hint">Leave blank to use account username</span>
+        </div>
+
+        <!-- Bio -->
+        <div class="pf-field full">
+          <label for="bio">Bio <span style="font-weight:400;text-transform:none;font-size:.82rem;">(max 200 chars)</span></label>
+          <textarea id="bio" name="bio" maxlength="200"
+                    placeholder="Tell the community about yourself...">{{ profile.bio }}</textarea>
+        </div>
+
+        <!-- Avatar colour -->
+        <div class="pf-field full">
+          <label>Avatar Colour</label>
+          <div class="color-swatches">
+            {% for color in avatar_colors %}
+            <input type="radio" name="avatar_color"
+                   value="{{ color }}"
+                   class="color-swatch"
+                   style="background: {{ color }}"
+                   title="{{ color }}"
+                   {% if profile.avatar_color == color %}checked{% endif %}>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Leaderboard visibility -->
+        <div class="pf-field full">
+          <div class="toggle-row">
+            <span>Show me on the leaderboard</span>
+            <label class="tgl">
+              <input type="checkbox" name="show_on_leaderboard"
+                     value="yes"
+                     {% if profile.show_on_leaderboard %}checked{% endif %}>
+              <span class="tgl-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Admin-only: role management -->
+        {% if is_admin and not own_profile %}
+        <div class="pf-field full">
+          <label for="role">User Role (Admin Only)</label>
+          <select id="role" name="role" class="role-select" style="width:200px">
+            <option value="user"      {% if profile.role == 'user'      %}selected{% endif %}>User</option>
+            <option value="moderator" {% if profile.role == 'moderator' %}selected{% endif %}>Moderator</option>
+            <option value="admin"     {% if profile.role == 'admin'     %}selected{% endif %}>Admin</option>
+          </select>
+        </div>
+        {% endif %}
+
+      </div>
+
+      <button type="submit" class="profile-save-btn">💾 Save Changes</button>
+    </form>
+  </div>
+  {% endif %}
+
+  <!-- Auth links -->
+  {% if own_profile %}
+  <p style="text-align:center;margin-top:1.25rem;font-size:.875rem;color:var(--text-muted)">
+    Want to change your password?
+    <a href="{% url 'password_reset' %}">Reset it here →</a>
+    &nbsp;·&nbsp;
+    {% if request.user.email %}
+      <a href="{% url 'tracker:resend_verification' %}">Resend verification email</a>
+    {% endif %}
+  </p>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Live avatar preview on colour change
+document.querySelectorAll('.color-swatch').forEach(swatch => {
+  swatch.addEventListener('change', () => {
+    document.getElementById('avatar-preview').style.background = swatch.value;
+    try { localStorage.setItem('cc_avatar_color', swatch.value); } catch(e) {}
+  });
+});
+
+// Set nav avatar colour on page load
+try {
+  const color = '{{ profile.avatar_color|escapejs }}';
+  if (color) {
+    const el = document.getElementById('nav-avatar-initials');
+    if (el) el.style.background = color;
+    localStorage.setItem('cc_avatar_color', color);
+    localStorage.setItem('cc_role', '{{ profile.role|escapejs }}');
+  }
+} catch(e) {}
+</script>
+{% endblock %}
