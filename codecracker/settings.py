@@ -3,7 +3,6 @@ import os
 import urllib.parse
 from mongoengine import connect
 from dotenv import load_dotenv
-import sys
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -99,6 +98,9 @@ MIDDLEWARE = [
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+WHITENOISE_SKIP_COMPRESS_EXTENSIONS = ['map']
+WHITENOISE_MANIFEST_STRICT = False
+
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
@@ -147,7 +149,7 @@ USE_TZ = True
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Caching with Redis (use dummy cache during Docker build)
+# Caching with Redis (use fake cache during Docker build)
 if _IS_BUILD:
     CACHES = {'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}}
 else:
