@@ -5,10 +5,10 @@ from celery import Celery
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "codecracker.settings")
 
 # Create a Celery application instance
-celery_app = Celery("codecracker")
+app = Celery("codecracker")
 
 # Load configuration from Django settings, using the CELERY namespace
-celery_app.config_from_object("django.conf:settings", namespace="CELERY")
+app.config_from_object("django.conf:settings", namespace="CELERY")
 
 # Automatically discover tasks in all registered Django app configs
-celery_app.autodiscover_tasks()
+app.autodiscover_tasks()
