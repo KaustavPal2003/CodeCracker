@@ -104,8 +104,21 @@ def fetch_and_store_rating_history(username, include_atcoder=True):
     print(f"[sync] fetching rating history for {username}")
     history = []
 
+    # Look up platform-specific handles from UserProfile
+    try:
+        from tracker.models import UserProfile
+        profile = UserProfile.objects(username=username).first()
+        lc_handle = (profile.leetcode_handle.strip() if profile and profile.leetcode_handle.strip() else username)
+        cc_handle = (profile.codechef_handle.strip() if profile and profile.codechef_handle.strip() else username)
+        cf_handle = (profile.codeforces_handle.strip() if profile and profile.codeforces_handle.strip() else username)
+        ac_handle = (profile.atcoder_handle.strip() if profile and profile.atcoder_handle.strip() else username)
+    except Exception:
+        lc_handle = cc_handle = cf_handle = ac_handle = username
+
+    print(f"[sync] handles — CF:{cf_handle} LC:{lc_handle} CC:{cc_handle} AC:{ac_handle}")
+
     # Codeforces
-    for e in fetch_codeforces_sync(username):
+    for e in fetch_codeforces_sync(cf_handle):
         try:
             dt = datetime.fromtimestamp(e["ratingUpdateTimeSeconds"])
             history.append(RatingHistory(
@@ -117,7 +130,7 @@ def fetch_and_store_rating_history(username, include_atcoder=True):
             pass
 
     # CodeChef (API-based)
-    for e in fetch_codechef_contest_history(username):
+    for e in fetch_codechef_contest_history(cc_handle):
         try:
             dt = datetime.strptime(e["date"], "%Y-%m-%d %H:%M:%S")
             history.append(RatingHistory(
@@ -129,7 +142,7 @@ def fetch_and_store_rating_history(username, include_atcoder=True):
             pass
 
     # LeetCode
-    lc_solved, lc_hist = fetch_leetcode_sync(username)
+    lc_solved, lc_hist = fetch_leetcode_sync(lc_handle)
     for e in lc_hist:
         try:
             dt = datetime.strptime(e["date"], "%Y-%m-%d %H:%M:%S")
@@ -143,7 +156,7 @@ def fetch_and_store_rating_history(username, include_atcoder=True):
 
     # AtCoder
     if include_atcoder:
-        ac_hist, _ = fetch_atcoder_history(username)
+        ac_hist, _ = fetch_atcoder_history(ac_handle)
         for e in ac_hist:
             try:
                 dt = datetime.strptime(e["date"], "%Y-%m-%d %H:%M:%S")

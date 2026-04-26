@@ -114,11 +114,26 @@ async def fetch_and_store_rating_history_async(username,
     Returns (history: list[RatingHistory], lc_solved: int).
     """
     print(f"[async] fetching rating history for {username}")
+
+    # Look up platform-specific handles from UserProfile
+    try:
+        from asgiref.sync import sync_to_async
+        from tracker.models import UserProfile
+        profile = await sync_to_async(UserProfile.objects(username=username).first)()
+        lc_handle = (profile.leetcode_handle.strip() if profile and profile.leetcode_handle.strip() else username)
+        cc_handle = (profile.codechef_handle.strip() if profile and profile.codechef_handle.strip() else username)
+        cf_handle = (profile.codeforces_handle.strip() if profile and profile.codeforces_handle.strip() else username)
+        ac_handle = (profile.atcoder_handle.strip() if profile and profile.atcoder_handle.strip() else username)
+    except Exception:
+        lc_handle = cc_handle = cf_handle = ac_handle = username
+
+    print(f"[async] handles — CF:{cf_handle} LC:{lc_handle} CC:{cc_handle} AC:{ac_handle}")
+
     async with aiohttp.ClientSession() as session:
-        cf_task  = fetch_codeforces(session, username)
-        cc_task  = fetch_codechef_async(username)
-        lc_task  = fetch_leetcode(session, username)
-        ac_task  = fetch_atcoder_async(username) if include_atcoder else asyncio.sleep(0, result=([], 0))
+        cf_task  = fetch_codeforces(session, cf_handle)
+        cc_task  = fetch_codechef_async(cc_handle)
+        lc_task  = fetch_leetcode(session, lc_handle)
+        ac_task  = fetch_atcoder_async(ac_handle) if include_atcoder else asyncio.sleep(0, result=([], 0))
 
         cf_data, cc_data, (lc_solved, lc_hist), (ac_hist, _) = await asyncio.gather(
             cf_task, cc_task, lc_task, ac_task
