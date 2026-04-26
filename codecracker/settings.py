@@ -3,6 +3,7 @@ import os
 import urllib.parse
 from mongoengine import connect
 from dotenv import load_dotenv
+import dj_database_url
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -156,6 +157,14 @@ else:
             'LOCATION': REDIS_URL,
         }
     }
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
+        conn_max_age=600,
+        ssl_require=False
+    )
+}
 
 # Email (for password reset)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
