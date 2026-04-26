@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // WebSocket Setup with reconnection
-    const wsUrl = `ws://${window.location.host}/ws/stats/${username}/`;
+    const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/stats/${username}/`;
     let ws;
     let reconnectAttempts = 0;
     const maxReconnectAttempts = 5;

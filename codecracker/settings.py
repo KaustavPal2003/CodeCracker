@@ -122,6 +122,14 @@ TEMPLATES = [
     },
 ]
 
+# Database (SQLite for Django ORM, MongoDB via MongoEngine)
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -192,4 +200,4 @@ AUTH_USER_MODEL = 'auth.User'
 
 APP_DOMAIN = os.getenv('APP_DOMAIN', '127.0.0.1:8000')
 CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", f"ws://{APP_DOMAIN}", f"wss://{APP_DOMAIN}")
-CSP_CONNECT_SRC = ("'self'", f"ws://{APP_DOMAIN}", f"wss://{APP_DOMAIN}")
+CSP_CONNECT_SRC = ("'self'", f"ws://{APP_DOMAIN}", f"wss://{APP_DOMAIN}", "wss:", "ws:")

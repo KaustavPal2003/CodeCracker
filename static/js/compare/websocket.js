@@ -22,7 +22,7 @@ export function initWebSocket(username) {
         return;
     }
 
-    ws = new WebSocket(`ws://${window.location.host}/ws/stats/${username}/`);
+    ws = new WebSocket(`${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/stats/${username}/`);
     ws.binaryType = 'arraybuffer';
     console.log(`WebSocket initialized for ${username}`);
 
