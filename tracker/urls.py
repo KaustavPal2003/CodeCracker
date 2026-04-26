@@ -21,7 +21,7 @@ from .views.stats_views import (
     fetch_user_stats, fetch_user_rating_history,
     user_performance_view, user_stats, compare_performance,
 )
-from .views.comparison_views import compare_stats, save_comparison, check_user_status
+from .views.comparison_views import compare_stats, compare_stats_api, save_comparison, check_user_status
 from .views.user_management_views import add_user
 
 app_name = "tracker"
@@ -72,6 +72,7 @@ urlpatterns = [
 
     # ── Comparison ───────────────────────────────────────────────────────
     path("compare/",         compare_stats,   name="compare_stats"),
+    path("api/compare/",     compare_stats_api, name="compare_stats_api"),
     path("save-comparison/", save_comparison, name="save_comparison"),
 
     # ── User management ──────────────────────────────────────────────────

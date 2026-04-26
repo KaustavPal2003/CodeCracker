@@ -17,10 +17,15 @@ class SavedComparison(Document):
 
 def validate_user(username):
     """Validate if a user exists and has valid ratings."""
-    if not User.objects.filter(username=username).exists():
+    # Check MongoDB UserStats first (works even if Django DB was reset)
+    user = UserStats.objects(username=username).first()
+
+    # Also accept if Django user exists but has no stats yet
+    django_exists = User.objects.filter(username=username).exists()
+
+    if not user and not django_exists:
         return False, {"exists_in_sqlite": False, "message": "User does not exist in the system"}, 404
 
-    user = UserStats.objects(username=username).first()
     if not user:
         return False, {
             "exists_in_sqlite": True,
@@ -95,6 +100,43 @@ def save_comparison(request):
        return JsonResponse({'success': False, 'error': 'Invalid JSON data'}, status=400)
    except Exception as e:
        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+def compare_stats_api(request):
+    """HTTP fallback endpoint when WebSocket is unavailable."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+        u1 = data.get('user1_username', '').strip()
+        u2 = data.get('user2_username', '').strip()
+        if not u1 or not u2:
+            return JsonResponse({'error': 'Both usernames required'}, status=400)
+
+        from tracker.utils.sync_fetchers import fetch_and_store_rating_history
+
+        def build_user_data(username):
+            history, lc_solved = fetch_and_store_rating_history(username)
+            rating_history = [h.to_dict() for h in history] if history else []
+            stats = UserStats.objects(username=username).first()
+            lc_history = [h for h in rating_history if h.get('platform') == 'LeetCode']
+            lc_rating = max((h.get('new_rating', 0) for h in lc_history), default=None)
+            return {
+                'username': username,
+                'codeforces_rating': stats.codeforces_rating if stats else 0,
+                'leetcode_solved': lc_solved or 0,
+                'leetcode_rating': lc_rating,
+                'codechef_rating': stats.codechef_rating if stats else 0,
+                'atcoder_rating': stats.atcoder_rating if stats else 0,
+                'rating_history': rating_history[-50:],
+            }
+
+        user1_data = build_user_data(u1)
+        user2_data = build_user_data(u2)
+        return JsonResponse({'user1': user1_data, 'compare_to': user2_data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 @login_required
 def compare_stats(request):

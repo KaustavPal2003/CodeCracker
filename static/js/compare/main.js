@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } catch (wsError) {
                 console.warn('WebSocket failed, falling back to HTTP:', wsError);
                 pendingComparison = null;
-                const response = await fetch('/compare_stats/', {
+                const response = await fetch('/api/compare/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
