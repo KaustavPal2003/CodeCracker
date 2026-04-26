@@ -3,7 +3,7 @@
 Upgraded:
   • Selenium replaced with codechef_api.py
   • AtCoder platform added (atcoder.py)
-  • fetch_and_store_rating_history_async returns AtCoder history too
+  • fetch_and_store_rating_history_async uses platform-specific handles from UserProfile
 """
 import asyncio
 import aiohttp
@@ -87,10 +87,9 @@ async def fetch_leetcode(http_session, username, include_non_attended=False):
             if "errors" in data or not data.get("data"):
                 return await fetch_leetcode_solved(http_session, username), []
 
-            history_data = data["data"].get("userContestRankingHistory", [])
             history = []
-            for e in history_data:
-                if not include_non_attended and not e["attended"]:
+            for e in data["data"].get("userContestRankingHistory", []):
+                if not e["attended"] and not include_non_attended:
                     continue
                 dt = datetime.fromtimestamp(e["contest"]["startTime"])
                 history.append({
@@ -107,10 +106,10 @@ async def fetch_leetcode(http_session, username, include_non_attended=False):
         return await fetch_leetcode_solved(http_session, username), []
 
 
-async def fetch_and_store_rating_history_async(username,
-                                               include_atcoder=True):
+async def fetch_and_store_rating_history_async(username, include_atcoder=True):
     """
     Fetch from Codeforces, LeetCode, CodeChef (API), and AtCoder.
+    Uses platform-specific handles from UserProfile.
     Returns (history: list[RatingHistory], lc_solved: int).
     """
     print(f"[async] fetching rating history for {username}")
@@ -119,21 +118,22 @@ async def fetch_and_store_rating_history_async(username,
     try:
         from asgiref.sync import sync_to_async
         from tracker.models import UserProfile
-        profile = await sync_to_async(UserProfile.objects(username=username).first)()
-        lc_handle = (profile.leetcode_handle.strip() if profile and profile.leetcode_handle.strip() else username)
-        cc_handle = (profile.codechef_handle.strip() if profile and profile.codechef_handle.strip() else username)
+        profile = await sync_to_async(lambda: UserProfile.objects(username=username).first())()
+        lc_handle = (profile.leetcode_handle.strip()   if profile and profile.leetcode_handle.strip()   else username)
+        cc_handle = (profile.codechef_handle.strip()   if profile and profile.codechef_handle.strip()   else username)
         cf_handle = (profile.codeforces_handle.strip() if profile and profile.codeforces_handle.strip() else username)
-        ac_handle = (profile.atcoder_handle.strip() if profile and profile.atcoder_handle.strip() else username)
-    except Exception:
+        ac_handle = (profile.atcoder_handle.strip()    if profile and profile.atcoder_handle.strip()    else username)
+    except Exception as e:
+        print(f"[async] handle lookup failed: {e}")
         lc_handle = cc_handle = cf_handle = ac_handle = username
 
     print(f"[async] handles — CF:{cf_handle} LC:{lc_handle} CC:{cc_handle} AC:{ac_handle}")
 
     async with aiohttp.ClientSession() as session:
-        cf_task  = fetch_codeforces(session, cf_handle)
-        cc_task  = fetch_codechef_async(cc_handle)
-        lc_task  = fetch_leetcode(session, lc_handle)
-        ac_task  = fetch_atcoder_async(ac_handle) if include_atcoder else asyncio.sleep(0, result=([], 0))
+        cf_task = fetch_codeforces(session, cf_handle)
+        cc_task = fetch_codechef_async(cc_handle)
+        lc_task = fetch_leetcode(session, lc_handle)
+        ac_task = fetch_atcoder_async(ac_handle) if include_atcoder else asyncio.sleep(0, result=([], 0))
 
         cf_data, cc_data, (lc_solved, lc_hist), (ac_hist, _) = await asyncio.gather(
             cf_task, cc_task, lc_task, ac_task
@@ -150,8 +150,8 @@ async def fetch_and_store_rating_history_async(username,
                 rank=e["rank"], old_rating=e["oldRating"], new_rating=e["newRating"],
                 date=dt, change=e["newRating"] - e["oldRating"]
             ))
-        except (KeyError, ValueError) as err:
-            print(f"CF entry skip: {err}")
+        except (KeyError, ValueError):
+            pass
 
     for e in cc_data:
         try:
@@ -161,8 +161,8 @@ async def fetch_and_store_rating_history_async(username,
                 rank=e["rank"], old_rating=e["old_rating"], new_rating=e["new_rating"],
                 date=dt, change=e["new_rating"] - e["old_rating"]
             ))
-        except (KeyError, ValueError) as err:
-            print(f"CC entry skip: {err}")
+        except (KeyError, ValueError):
+            pass
 
     for e in lc_hist:
         try:
@@ -172,20 +172,39 @@ async def fetch_and_store_rating_history_async(username,
                 rank=e["rank"], old_rating=0, new_rating=e["new_rating"],
                 date=dt, change=0
             ))
-        except (KeyError, ValueError) as err:
-            print(f"LC entry skip: {err}")
+        except (KeyError, ValueError):
+            pass
 
-    # AtCoder entries already have all fields
-    for e in ac_hist:
-        try:
-            dt = datetime.strptime(e["date"], "%Y-%m-%d %H:%M:%S")
-            history.append(RatingHistory(
-                platform="AtCoder", contest=e["contest"],
-                rank=e["rank"], old_rating=e["old_rating"], new_rating=e["new_rating"],
-                date=dt, change=e["change"]
-            ))
-        except (KeyError, ValueError) as err:
-            print(f"AC entry skip: {err}")
+    if include_atcoder:
+        for e in ac_hist:
+            try:
+                dt = datetime.strptime(e["date"], "%Y-%m-%d %H:%M:%S")
+                history.append(RatingHistory(
+                    platform="AtCoder", contest=e["contest"],
+                    rank=e["rank"], old_rating=e["old_rating"], new_rating=e["new_rating"],
+                    date=dt, change=e["change"]
+                ))
+            except (KeyError, ValueError):
+                pass
 
-    print(f"[async] {username}: {len(history)} entries, LC solved={lc_solved}")
+    # Persist to MongoDB
+    try:
+        from asgiref.sync import sync_to_async
+        from tracker.models import UserStats
+
+        def _save():
+            user = UserStats.objects(username=username).first() or UserStats(username=username)
+            user.rating_history    = history
+            user.leetcode_solved   = lc_solved
+            user.codeforces_rating = max((h.new_rating for h in history if h.platform == "Codeforces"), default=0)
+            user.codechef_rating   = max((h.new_rating for h in history if h.platform == "CodeChef"),   default=0)
+            user.atcoder_rating    = max((h.new_rating for h in history if h.platform == "AtCoder"),    default=0)
+            user.last_updated      = datetime.utcnow()
+            user.save()
+            print(f"[async] stored {len(history)} entries for {username}, LC solved={lc_solved}")
+
+        await sync_to_async(_save)()
+    except Exception as e:
+        print(f"[async] store error: {e}")
+
     return history, lc_solved

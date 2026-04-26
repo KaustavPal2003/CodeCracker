@@ -79,6 +79,10 @@ def signup_view(request):
         if form.is_valid():
             user = form.save()
             UserProfile.get_or_create(user.username)
+            # Create a UserStats entry in MongoDB so they appear on leaderboard
+            from tracker.models import UserStats
+            if not UserStats.objects(username=user.username).first():
+                UserStats(username=user.username).save()
             login(request, user)
 
             if user.email:
@@ -108,6 +112,10 @@ def login_view(request):
             login(request, user)
             # Lazily create profile if it doesn't exist (pre-upgrade users)
             profile = UserProfile.get_or_create(user.username)
+            # Ensure UserStats exists in MongoDB (covers pre-existing users)
+            from tracker.models import UserStats
+            if not UserStats.objects(username=user.username).first():
+                UserStats(username=user.username).save()
 
             if user.email and not cache.get(f"email_verified_{user.username}"):
                 messages.warning(
