@@ -14,3 +14,5 @@ requests
 aiohttp
 beautifulsoup4
 asgiref
+dj-database-url
+psycopg2-binary
