@@ -15,15 +15,12 @@ def connect_to_mongodb():
     if _MONGO_CONNECTED:
         return  # Already connected
 
-    # Get credentials from environment variables
-    username = 'kaustabpal88'
-    password ='J3NhCZ%Ji9AwDe%'
+    username = os.getenv('MONGO_USERNAME')
+    password = os.getenv('MONGO_PASSWORD')
 
-    # Check if credentials are provided
     if not username or not password:
         raise ValueError(
-            "MongoDB credentials not provided. Please set MONGO_USERNAME and MONGO_PASSWORD "
-            "environment variables before running the scripts."
+            "MONGO_USERNAME and MONGO_PASSWORD environment variables must be set."
         )
 
     # URL encode the credentials
