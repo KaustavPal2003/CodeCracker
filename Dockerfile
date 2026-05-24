@@ -11,4 +11,14 @@ COPY . .
 
 EXPOSE 8000
 
-CMD python manage.py collectstatic --noinput && python manage.py migrate && daphne -b 0.0.0.0 -p ${PORT:-8000} codecracker.asgi:application
+CMD python manage.py collectstatic --noinput && \
+    python manage.py migrate && \
+    python manage.py shell -c "
+from django.contrib.auth.models import User
+if not User.objects.filter(username='admin').exists():
+    User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
+    print('Superuser created')
+else:
+    print('Already exists')
+" && \
+    daphne -b 0.0.0.0 -p ${PORT:-8000} codecracker.asgi:application
