@@ -172,11 +172,6 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-# Celery configuration
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', os.getenv('REDIS_URL', 'redis://localhost:6379/0'))
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-
 # Debug Toolbar (for local dev only)
 INTERNAL_IPS = ['127.0.0.1']
 
@@ -185,7 +180,7 @@ CSP_DEFAULT_SRC = ("'self'",)
 CSP_FRAME_ANCESTORS = ("'self'",)
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://codecracker-production.up.railway.app',
+    'https://codecracker.onrender.com',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

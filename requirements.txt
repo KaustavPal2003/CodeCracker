@@ -6,7 +6,6 @@ mongoengine
 pymongo[srv]
 dnspython
 python-dotenv
-celery
 django-ratelimit
 django-csp
 whitenoise
