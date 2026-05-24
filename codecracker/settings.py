@@ -180,7 +180,7 @@ CSP_DEFAULT_SRC = ("'self'",)
 CSP_FRAME_ANCESTORS = ("'self'",)
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://codecracker.onrender.com',
+    'https://codecracker-odbi.onrender.com',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
