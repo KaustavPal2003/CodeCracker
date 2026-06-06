@@ -96,26 +96,30 @@ def fetch_leetcode_sync(username):
         return fetch_leetcode_solved_sync(username), []
 
 
-def fetch_and_store_rating_history(username, include_atcoder=True):
+def fetch_and_store_rating_history(
+    username,
+    include_atcoder=True,
+    cf_handle=None,
+    lc_handle=None,
+    cc_handle=None,
+    ac_handle=None,
+):
     """
     Synchronous full fetch: CF + CC (API) + LC + AtCoder.
     Stores to MongoDB. Returns (history, lc_solved).
+
+    Handles are passed in explicitly by fetch_coordinator — this function
+    no longer queries UserProfile itself. Fallback to username only if
+    called directly without handles (e.g. tests or scripts).
     """
+    cf_handle = cf_handle or username
+    lc_handle = lc_handle or username
+    cc_handle = cc_handle or username
+    ac_handle = ac_handle or username
+
     print(f"[sync] fetching rating history for {username}")
-    history = []
-
-    # Look up platform-specific handles from UserProfile
-    try:
-        from tracker.models import UserProfile
-        profile = UserProfile.objects(username=username).first()
-        lc_handle = (profile.leetcode_handle.strip() if profile and profile.leetcode_handle.strip() else username)
-        cc_handle = (profile.codechef_handle.strip() if profile and profile.codechef_handle.strip() else username)
-        cf_handle = (profile.codeforces_handle.strip() if profile and profile.codeforces_handle.strip() else username)
-        ac_handle = (profile.atcoder_handle.strip() if profile and profile.atcoder_handle.strip() else username)
-    except Exception:
-        lc_handle = cc_handle = cf_handle = ac_handle = username
-
     print(f"[sync] handles — CF:{cf_handle} LC:{lc_handle} CC:{cc_handle} AC:{ac_handle}")
+    history = []
 
     # Codeforces
     for e in fetch_codeforces_sync(cf_handle):
