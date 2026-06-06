@@ -23,6 +23,10 @@ services:
         value: "codecracker-odbi.onrender.com"
       - key: DJANGO_COLLECTSTATIC
         value: "0"
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
 
   - type: redis
     name: codecracker-redis
